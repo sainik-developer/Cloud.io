@@ -53,11 +53,10 @@ public class CompanyController {
                     companyDTO.setCompanyStatus(CompanyStatus.NOT_VERIFIED);
                     return companyDTO;
                 })
-                .doOnNext(companyDto -> accountService.createAccount(companyDto.getCompanyId(),authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN).subscribe())
+                .doOnNext(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null).subscribe())
                 .map(CompanyMapper.INSTANCE::fromDTO)
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException()));
     }
-
 }

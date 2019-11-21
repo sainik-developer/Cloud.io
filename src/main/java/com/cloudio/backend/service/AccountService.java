@@ -18,9 +18,11 @@ import java.util.UUID;
 public class AccountService {
     private final AccountRepository accountRepository;
 
-    public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType) {
+    public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return accountRepository.save(AccountDO.builder()
                 .type(accountType)
+                .firstName(firstName)
+                .lastName(lastname)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build())

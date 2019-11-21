@@ -1,10 +1,7 @@
 package com.cloudio.backend.advice;
 
 import com.cloudio.backend.dto.ResponseDTO;
-import com.cloudio.backend.exception.AccountNotExistException;
-import com.cloudio.backend.exception.InvalidTempTokenException;
-import com.cloudio.backend.exception.SignInException;
-import com.cloudio.backend.exception.VerificationException;
+import com.cloudio.backend.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -35,5 +32,23 @@ public class GroupErrorAdvice {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseDTO invalidTempTokenException(final Exception e) {
         return new ResponseDTO(HttpStatus.NOT_FOUND.value(), "Temp token is invalid", null);
+    }
+
+    @ExceptionHandler(value = SuspiciousStateException.class)
+    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+    public ResponseDTO suspiciousStateException(final Exception e) {
+        return new ResponseDTO(null, "unknown to developer, should not happen, either data is corrupted or manually db is modified", null);
+    }
+
+    @ExceptionHandler(value = UnautherizedToInviteException.class)
+    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+    public ResponseDTO unautherizedToInviteException(final Exception e) {
+        return new ResponseDTO(null, "You are unauthorized to invite anyone for this company", null);
+    }
+
+    @ExceptionHandler(value = InvalidTokenException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO invalidTokenException(final Exception e) {
+        return new ResponseDTO(null, "invalid token", null);
     }
 }

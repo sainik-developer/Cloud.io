@@ -5,9 +5,7 @@ import com.cloudio.backend.entity.AccessTokenDO;
 import com.cloudio.backend.entity.AccountDO;
 import com.cloudio.backend.entity.CompanyDO;
 import com.cloudio.backend.entity.SignInDetailDO;
-import com.cloudio.backend.exception.InvalidTokenException;
-import com.cloudio.backend.exception.SignInException;
-import com.cloudio.backend.exception.VerificationException;
+import com.cloudio.backend.exception.*;
 import com.cloudio.backend.model.TempAuthToken;
 import com.cloudio.backend.pojo.AccountStatus;
 import com.cloudio.backend.pojo.AccountType;
@@ -102,8 +100,7 @@ public class AuthService {
         log.info("verification start for phone number {} code is {}", phoneNumber, code);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
                 .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
-                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber))
-                .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
+                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber));
     }
 
 
@@ -118,7 +115,6 @@ public class AuthService {
         return Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
     }
 
-
     public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
         final TempAuthToken authToken = decodeTempAuthToken(tempAuthTokenStr);
         log.info("auth token is {}", authToken);
@@ -127,22 +123,20 @@ public class AuthService {
                 .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
                 .doOnNext(signInDetailDo -> log.info("temp token authentication is successful for phoneNumber {}", signInDetailDo.getPhoneNumber()))
                 .doOnNext(signInDetailDo -> signInCodeRepository.delete(signInDetailDo).subscribe())
-                .flatMap(signInDetailDo ->
-                        accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
-                                .flatMap(accountDO -> {
-                                    log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
-                                    return getAccessToken(accountDO.getAccountId());
-                                })
-                                .switchIfEmpty(accountService.createAccount(companyId, authToken.getPhoneNumber(), AccountType.ADMIN)
-                                        .map(AccountDTO::getAccountId)
-                                        .flatMap(this::getAccessToken)));
-
-
+                .flatMap(signInDetailDo -> accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
+                        .flatMap(accountDO -> {
+                            log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
+                            return getAccessToken(accountDO.getAccountId());
+                        }).switchIfEmpty(Mono.error(new SuspiciousStateException())));
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
-        final String[] values = new String(Base64.decodeBase64(tempAuthTokenStr)).split("#");
-        return TempAuthToken.builder().phoneNumber(values[0]).code(values[1]).createTime(LocalDateTime.parse(values[2])).build();
+        try {
+            final String[] values = new String(Base64.decodeBase64(tempAuthTokenStr)).split("#");
+            return TempAuthToken.builder().phoneNumber(values[0]).code(values[1]).createTime(LocalDateTime.parse(values[2])).build();
+        } catch (final Exception e) {
+            throw new InvalidTempTokenException();
+        }
     }
 
     public Mono<String> logout(final String accessToken) {
@@ -153,8 +147,7 @@ public class AuthService {
                             accountDo.setFirebaseAuthToken(null);
                             return accountDo;
                         }).flatMap(accountRepository::save)))
-                .map(aBoolean -> "Logged out successfully")
-                .switchIfEmpty(Mono.error(new InvalidTokenException()));
+                .map(aBoolean -> "Logged out successfully");
     }
 
     private String getFormattedNumber(final String phoneNumber) throws SignInException {
