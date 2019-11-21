@@ -1,11 +1,13 @@
 package com.cloudio.backend.repository;
 
-import com.cloudio.backend.model.SignInDetails;
+import com.cloudio.backend.entity.SignInDetailDO;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-public interface SignInCodeRepository {
+@Repository
+public interface SignInCodeRepository extends ReactiveMongoRepository<SignInDetailDO, String> {
 
-    Optional<SignInDetails> findByPhoneNumber(final String phoneNumber);
+    Mono<SignInDetailDO> findByPhoneNumber(final String phoneNumber);
 
-    Optional<SignInDetails> upsert(final SignInDetails signInDetails);
 }

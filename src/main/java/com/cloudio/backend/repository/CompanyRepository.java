@@ -1,13 +1,16 @@
 package com.cloudio.backend.repository;
 
-import com.cloudio.backend.model.Company;
+import com.cloudio.backend.entity.CompanyDO;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
 
 import java.util.Optional;
-public interface CompanyRepository {
 
-    Optional<Company> findByCompanyId(final String companyId);
+@Repository
+public interface CompanyRepository extends ReactiveMongoRepository<CompanyDO, String> {
 
-    Optional<Company> saveCompany(final Company company);
+    Mono<CompanyDO> findByCompanyId(final String companyId);
 
 
 }

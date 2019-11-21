@@ -1,0 +1,33 @@
+package com.cloudio.backend.entity;
+
+import com.cloudio.backend.pojo.CompanyStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@Document("companies")
+@AllArgsConstructor
+@NoArgsConstructor
+public class CompanyDO {
+    @Id
+    private String id;
+
+    private String companyId;
+    private String name;
+    private String companyAvatarUrl;
+    private CompanyStatus companyStatus;
+    @CreatedDate
+    private LocalDateTime createdDate;
+    @LastModifiedDate
+    private LocalDateTime updatedDate;
+
+}

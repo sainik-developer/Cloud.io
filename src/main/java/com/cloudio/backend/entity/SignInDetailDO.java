@@ -1,21 +1,28 @@
-package com.cloudio.backend.model;
+package com.cloudio.backend.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Data
 @Builder
+@Document("signincodes")
 @AllArgsConstructor
 @NoArgsConstructor
-public class SignInDetails {
+public class SignInDetailDO {
 
-    public static final String COLLECTION_NAME = "signincodes";
+    @Id
+    private String id;
+
     private String smsCode;
     private String phoneNumber;
+    @LastModifiedDate
     private LocalDateTime updated;
     private int retry;
 

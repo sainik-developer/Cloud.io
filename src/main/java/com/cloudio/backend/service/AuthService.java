@@ -1,25 +1,34 @@
 package com.cloudio.backend.service;
 
-import com.cloudio.backend.exception.AccountNotFoundException;
+import com.cloudio.backend.dto.AccountDTO;
+import com.cloudio.backend.entity.AccessTokenDO;
+import com.cloudio.backend.entity.AccountDO;
+import com.cloudio.backend.entity.CompanyDO;
+import com.cloudio.backend.entity.SignInDetailDO;
+import com.cloudio.backend.exception.InvalidTokenException;
 import com.cloudio.backend.exception.SignInException;
 import com.cloudio.backend.exception.VerificationException;
-import com.cloudio.backend.model.*;
-import com.cloudio.backend.repository.*;
-import com.cloudio.backend.restclient.AskfastRestApi;
-import com.cloudio.backend.utils.Properties;
+import com.cloudio.backend.model.TempAuthToken;
+import com.cloudio.backend.pojo.AccountStatus;
+import com.cloudio.backend.pojo.AccountType;
+import com.cloudio.backend.repository.AccessTokenRepository;
+import com.cloudio.backend.repository.AccountRepository;
+import com.cloudio.backend.repository.CompanyRepository;
+import com.cloudio.backend.repository.SignInCodeRepository;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 
 @Log4j2
@@ -30,46 +39,43 @@ public class AuthService {
     private final SignInCodeRepository signInCodeRepository;
     private final AccountRepository accountRepository;
     private final AccessTokenRepository accessTokenRepository;
-    private final AskfastRestApi askfastRestApi;
-    private final FirebaseTokenRepository firebaseTokenRepository;
+    private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
-    private final Properties properties;
+    private final AccountService accountService;
 
+    @Value("${cloudio.signup.maxRetry}")
+    private Integer maxRetry;
 
+    @Value("${cloudio.signup.cool_of_in_min_for_retries}")
+    private Integer COOL_OF_IN_MIN_FOR_RETRIES;
 
-    public String signup(final String phoneNumber) {
-        try {
-            final String formattedNumber = getFormattedNumber(phoneNumber);
-            log.info("Formatted number is {}", formattedNumber);
-            return signInCodeRepository.findByPhoneNumber(formattedNumber)
-                    .map(signInDetails -> {
-                        log.info("Number is already used to sign up {}", signInDetails.getPhoneNumber());
-                        if (signInDetails.getRetry() >= properties.getApplication_max_try() &&
-                                Duration.between(signInDetails.getUpdated(), LocalDateTime.now()).toMinutes() < properties.getApplication_cool_off_in_mins_for_retries()) {
-                            log.error("Sign up is failed as retry count is " + signInDetails.getRetry() + "last updated" + signInDetails.getUpdated().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-                            throw new SignInException("Phone number is locked. You cannot receive code anymore. Please try after sometime.");
-                        } else {
-                            signInDetails.increaseRetries(properties.getApplication_max_try());
-                            if (signupEntry(signInDetails) && askfastRestApi.sendSms(signInDetails.getPhoneNumber(), signInDetails.getSmsCode())) {
-                                return "Sms is sent where retry count is {}" + signInDetails.getRetry();
-                            }
-                            throw new SignInException("Something went wrong with sending SMS,Please try after sometime.");
-                        }
-                    })
-                    .orElseGet(() -> {
-                        log.info("Number had arrived for first time to sign up");
-                        final SignInDetails signInDetails = SignInDetails.builder().phoneNumber(phoneNumber).retry(1).smsCode(generateSMSCode()).updated(LocalDateTime.now()).build();
-                        if (signupEntry(signInDetails) && askfastRestApi.sendSms(signInDetails.getPhoneNumber(), signInDetails.getSmsCode())) {
-                            log.info(formattedNumber + " is registered successfully");
-                            return "Sms is sent for first time";
-                        }
-                        log.error("Sms sending is failed for phone number {}", formattedNumber);
-                        throw new SignInException("Sms sending is failed");
-                    });
-        } catch (final NumberParseException e) {
-            log.error("There is exception in formatting the number {}", phoneNumber);
-            throw new SignInException("Incorrect Phone number provided: " + phoneNumber);
-        }
+    public Mono<String> signup(final String phoneNumber) {
+        return Mono.just(getFormattedNumber(phoneNumber))
+                .doOnNext(formattedNumber -> log.info("Formatted number is {}", formattedNumber))
+                .flatMap(signInCodeRepository::findByPhoneNumber)
+                .map(signInDetailDo -> {
+                    if (signInDetailDo.getRetry() >= maxRetry && Duration.between(signInDetailDo.getUpdated(), LocalDateTime.now()).toMinutes() < COOL_OF_IN_MIN_FOR_RETRIES) {
+                        log.error("Sign up is failed as retry count is {} and allowed time was {}", signInDetailDo.getRetry(), signInDetailDo.getUpdated().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                        throw new SignInException("Phone number is locked. You cannot receive code anymore. Please try after sometime.");
+                    }
+                    signInDetailDo.increaseRetries(maxRetry);
+                    signInDetailDo.setSmsCode(generateSMSCode());
+                    return signInDetailDo;
+                })
+                .flatMap(signInCodeRepository::save)
+                .flatMap(signInDetailDo -> askFastService.doAuthAndSendSMS(signInDetailDo.getPhoneNumber(), "Your verification code is " + signInDetailDo.getSmsCode())
+                        .filter(Boolean::booleanValue)
+                        .map(aBoolean -> "Sms is sent where retry count is " + signInDetailDo.getRetry())
+                        .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime."))
+                )
+                .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(generateSMSCode()).updated(LocalDateTime.now()).build())
+                        .doOnNext(signInDetailDo -> log.info("Number had arrived for first time to sign up {}", signInDetailDo.getPhoneNumber()))
+                        .flatMap(signInCodeRepository::save)
+                        .flatMap(signInDetailDo -> askFastService.doAuthAndSendSMS(signInDetailDo.getPhoneNumber(), "Your verification code is " + signInDetailDo.getSmsCode())
+                                .filter(Boolean::booleanValue)
+                                .doOnNext(aBoolean -> log.info("{} is registered successfully", signInDetailDo.getPhoneNumber()))
+                                .map(aBoolean -> "Sms is sent for first time")
+                                .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime."))));
     }
 
     /***
@@ -92,33 +98,20 @@ public class AuthService {
      * @param code - otp
      * @return List of companies
      */
-    public List<Company> verify(final String phoneNumber, final String code) {
-        try {
-            log.info("verification start for phone number {} code is {}", phoneNumber, code);
-            return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
-                    .filter(signInDetails -> signInDetails.getSmsCode().equals(code))
-                    .map(signInDetails -> retrieveAllAssociatedCompanyDetails(phoneNumber))
-                    .orElseThrow(() ->
-                            new VerificationException("Phone number is not found or code is not matched"));
-        } catch (final NumberParseException e) {
-            log.error("Phone number formatting is failed for {}", phoneNumber);
-            throw new VerificationException("Phone number is incorrect");
-        }
+    public Flux<CompanyDO> verify(final String phoneNumber, final String code) {
+        log.info("verification start for phone number {} code is {}", phoneNumber, code);
+        return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
+                .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
+                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber))
+                .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
 
 
-    public boolean isValidToken(final String tempToken) {
-
-            final TempAuthToken authToken = decodeTempAuthToken(tempToken);
-
-        try {
-            return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
-                    .filter(signInDetails -> signInDetails.getSmsCode().equals(authToken.getCode()))
-                    .isPresent();
-        } catch (NumberParseException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public Mono<String> isValidToken(final String tempToken) {
+        final TempAuthToken authToken = decodeTempAuthToken(tempToken);
+        return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
+                .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()))
+                .map(SignInDetailDO::getPhoneNumber);
     }
 
     public String createTemporaryToken(final String phoneNumber, final String code) {
@@ -126,77 +119,78 @@ public class AuthService {
     }
 
 
+    public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
+        final TempAuthToken authToken = decodeTempAuthToken(tempAuthTokenStr);
+        log.info("auth token is {}", authToken);
+        return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
+                .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
+                .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
+                .doOnNext(signInDetailDo -> log.info("temp token authentication is successful for phoneNumber {}", signInDetailDo.getPhoneNumber()))
+                .doOnNext(signInDetailDo -> signInCodeRepository.delete(signInDetailDo).subscribe())
+                .flatMap(signInDetailDo ->
+                        accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
+                                .flatMap(accountDO -> {
+                                    log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
+                                    return getAccessToken(accountDO.getAccountId());
+                                })
+                                .switchIfEmpty(accountService.createAccount(companyId, authToken.getPhoneNumber(), AccountType.ADMIN)
+                                        .map(AccountDTO::getAccountId)
+                                        .flatMap(this::getAccessToken)));
 
-    public String login(final String tempAuthTokenStr, final String companyId) {
-        try {
-            final TempAuthToken authToken = decodeTempAuthToken(tempAuthTokenStr);
-            log.info("auth token is "+authToken);
-            return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
-                    .filter(signInDetails -> signInDetails.getSmsCode().equals(authToken.getCode()))
-                    .map(signInDetails -> accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
-                            .map(account -> {
-                                log.info("Account is already registered so will get access token for phone number {}", authToken.getPhoneNumber());
-                                return getAccessToken(account.getAccountId());
-                            }).orElseGet(() -> {
-                                log.info("First time registration for phone number {}", authToken.getPhoneNumber());
-                                final Account account = Account.builder().accountId("CLOUDIO:ACC:" + UUID.randomUUID().toString()).companyId(companyId).phoneNumber(authToken.getPhoneNumber()).updated(LocalDateTime.now()).build();
-                                accountRepository.upsert(account);
-                                return getAccessToken(account.getAccountId());
-                            })).orElseThrow(Exception::new);
 
-        } catch (final Exception e) {
-            log.error("Phone number formatting is failed for ", e);
-            throw new VerificationException("Phone number is incorrect");
-        }
     }
 
-
-    private TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
+    public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
         final String[] values = new String(Base64.decodeBase64(tempAuthTokenStr)).split("#");
         return TempAuthToken.builder().phoneNumber(values[0]).code(values[1]).createTime(LocalDateTime.parse(values[2])).build();
     }
 
-    public String logout(final String accessToken) {
+    public Mono<String> logout(final String accessToken) {
         log.info("user trying to logout {}", accessToken);
         return accessTokenRepository.findByToken(accessToken)
-                .flatMap(at -> accessTokenRepository.removeByToken(accessToken)
-                        .flatMap(b -> firebaseTokenRepository.removeByAccountId(at.getAccountId())))
-                .map(aBoolean -> "logged out successfully")
-                .orElseThrow(() -> new AccountNotFoundException("logout failed"));
+                .flatMap(at -> accessTokenRepository.deleteByToken(at.getToken())
+                        .flatMap(b -> accountRepository.findByAccountIdAndStatus(at.getAccountId(), AccountStatus.ACTIVE).map(accountDo -> {
+                            accountDo.setFirebaseAuthToken(null);
+                            return accountDo;
+                        }).flatMap(accountRepository::save)))
+                .map(aBoolean -> "Logged out successfully")
+                .switchIfEmpty(Mono.error(new InvalidTokenException()));
     }
 
-    private String getFormattedNumber(final String phoneNumber) throws NumberParseException {
-        return PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance().parse(phoneNumber, null),
-                PhoneNumberUtil.PhoneNumberFormat.E164);
-    }
-
-    private boolean signupEntry(final SignInDetails signInDetails) {
-        return signInCodeRepository.upsert(signInDetails).isPresent();
+    private String getFormattedNumber(final String phoneNumber) throws SignInException {
+        try {
+            return PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance().parse(phoneNumber, "NL"),
+                    PhoneNumberUtil.PhoneNumberFormat.E164);
+        } catch (final NumberParseException e) {
+            throw new SignInException("Incorrect Phone number provided: " + phoneNumber);
+        }
     }
 
     private String generateSMSCode() {
         return String.valueOf((int) Math.floor(100000 + Math.random() * 900000));
     }
 
-
-    private List<Company> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
+    private Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
         return accountRepository.findByPhoneNumber(phoneNumber)
-                .map(accounts -> accounts.stream().map(account -> companyRepository.findByCompanyId(account.getCompanyId()).orElse(null)).collect(Collectors.toList())).orElse(null);
+                .map(AccountDO::getAccountId)
+                .flatMap(companyRepository::findByCompanyId);
     }
 
-
-
-    private String getAccessToken(final String accountId) {
-        log.info("Access token for account id {} is going to be retrieve", accountId);
-        return accessTokenRepository.findByToken(accountId)
-                .map(AccessToken::getToken)
-                .orElseGet(() -> {
-                    log.info("Access token to be retrieve for account id {} ", accountId);
-                    final String token = UUID.randomUUID().toString();
-                    accessTokenRepository.upsert(AccessToken.builder().accountId(accountId).token(token).build());
-                    log.info("Access token is generated for account id {} ", accountId);
-                    return token;
-                });
+    private Mono<String> getAccessToken(final String accountId) {
+        log.info("Access token for account id {} is going to be retrieved", accountId);
+        return accessTokenRepository.findByAccountId(accountId)
+                .doOnNext(accessTokenDo -> log.info("Access token is found for accountId {}", accountId))
+                .map(accessTokenDo -> {
+                    accessTokenDo.setToken(UUID.randomUUID().toString());
+                    accessTokenDo.setStamp(LocalDateTime.now());
+                    return accessTokenDo;
+                })
+                .flatMap(accessTokenRepository::save)
+                .doOnNext(accessTokenDo -> log.info("New token for accountId {} is {}", accessTokenDo.getAccountId(), accessTokenDo.getToken()))
+                .map(AccessTokenDO::getToken)
+                .switchIfEmpty(Mono.just(AccessTokenDO.builder().accountId(accountId).stamp(LocalDateTime.now()).token(UUID.randomUUID().toString()).build())
+                        .doOnNext(accessTokenDo -> log.info("Access token is generated for account id {} is {}", accountId, accessTokenDo.getToken()))
+                        .flatMap(accessTokenRepository::save)
+                        .map(AccessTokenDO::getToken));
     }
-
 }

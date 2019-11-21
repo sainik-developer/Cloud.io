@@ -1,4 +1,4 @@
-package com.cloudio.backend.model;
+package com.cloudio.backend.pojo;
 
 public enum AccountType {
     ADMIN, MEMBER

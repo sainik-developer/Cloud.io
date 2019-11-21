@@ -1,13 +1,16 @@
 package com.cloudio.backend.repository;
 
-import com.cloudio.backend.model.AccessToken;
+import com.cloudio.backend.entity.AccessTokenDO;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-public interface AccessTokenRepository {
+@Repository
+public interface AccessTokenRepository extends ReactiveMongoRepository<AccessTokenDO, String> {
 
-    Optional<AccessToken> findByToken(final String token);
+    Mono<AccessTokenDO> findByAccountId(final String accountId);
 
-    boolean upsert(final AccessToken accessToken);
+    Mono<AccessTokenDO> findByToken(final String token);
 
-    Optional<Boolean> removeByToken(final String token);
+    Mono<Long> deleteByToken(final String token);
 }
