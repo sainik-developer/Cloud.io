@@ -101,7 +101,7 @@ public class AuthService {
                         signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
                 .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
                 .doOnNext(signInDetailDo -> log.info("verification successful"))
-                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber))
+                .flatMapMany(signInDetailDo -> retrieveAllAssociatedCompanyDetails(signInDetailDo.getPhoneNumber()))
                 .switchIfEmpty(Flux.empty());
     }
 
