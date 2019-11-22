@@ -31,14 +31,14 @@ public class AWSS3Services {
     public Mono<String> uploadFileInS3(final Mono<FilePart> filePartMono) {
         return filePartMono.flatMap(filePart -> {
             try {
-                final String s3key = UUID.randomUUID() + filePart.filename().replace(" ", "_");
+                final String s3key = UUID.randomUUID() + "_" + filePart.filename().replace(" ", "_");
                 File tempFile = File.createTempFile(s3key, "tmp");
                 //TODO wrong practice, will need to make it non blocking
                 filePart.transferTo(tempFile).block();
                 final PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, s3key, tempFile).withCannedAcl(CannedAccessControlList.PublicRead);
                 PutObjectResult putObjectResult = s3client.putObject(putObjectRequest);
                 return Mono.just(endpointUrl + s3key);
-            } catch (final IOException e) {
+            } catch (final Throwable e) {
                 return Mono.error(new RuntimeException());
             }
         });

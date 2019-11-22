@@ -151,7 +151,7 @@ public class AuthService {
 
     private String getFormattedNumber(final String phoneNumber) throws SignInException {
         try {
-            return PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance().parse(phoneNumber, "NL"),
+            return PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance().parse(phoneNumber, null),
                     PhoneNumberUtil.PhoneNumberFormat.E164);
         } catch (final NumberParseException e) {
             throw new SignInException("Incorrect Phone number provided: " + phoneNumber);
