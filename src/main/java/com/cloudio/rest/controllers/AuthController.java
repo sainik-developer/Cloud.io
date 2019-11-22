@@ -45,6 +45,7 @@ public class AuthController {
         log.info("cloud io verify entering with phone Number {} ", phoneNumber);
         return authService.verify(phoneNumber, code)
                 .filter(Boolean::booleanValue)
+                .doOnNext(aBoolean -> log.info("verification status {}", aBoolean))
                 .flatMapMany(aBoolean -> authService.retrieveAllAssociatedCompanyDetails(phoneNumber))
                 .map(CompanyMapper.INSTANCE::toDTO)
                 .collectList()

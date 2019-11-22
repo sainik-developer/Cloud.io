@@ -99,8 +99,7 @@ public class AuthService {
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
                 .doOnNext(signInDetailDo -> log.info("phone number found for verification {} and code in db is {}",
                         signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
-                .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
-                .doOnNext(signInDetailDo -> log.info("verification successful"));
+                .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code));
     }
 
 
