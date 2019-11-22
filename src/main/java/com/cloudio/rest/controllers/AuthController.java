@@ -44,9 +44,10 @@ public class AuthController {
                                                          @PathVariable("code") final String code) {
         log.info("cloud io verify entering with phone Number {} ", phoneNumber);
         return authService.verify(phoneNumber, code)
+                .filter(Boolean::booleanValue)
+                .flatMapMany(aBoolean -> authService.retrieveAllAssociatedCompanyDetails(phoneNumber))
                 .map(CompanyMapper.INSTANCE::toDTO)
                 .collectList()
-                .filter(companyDtos -> companyDtos.size() > 0)
                 .map(companyDos -> ResponseEntity.ok()
                         .header("temp-authorization-token", authService.createTemporaryToken(phoneNumber, code))
                         .body(companyDos)

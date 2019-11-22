@@ -94,15 +94,13 @@ public class AuthService {
      * @param code - otp
      * @return List of companies
      */
-    public Flux<CompanyDO> verify(final String phoneNumber, final String code) {
+    public Mono<Boolean> verify(final String phoneNumber, final String code) {
         log.info("verification start for phone number {} code is {}", phoneNumber, code);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
                 .doOnNext(signInDetailDo -> log.info("phone number found for verification {} and code in db is {}",
                         signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
-                .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
-                .doOnNext(signInDetailDo -> log.info("verification successful"))
-                .flatMapMany(signInDetailDo -> retrieveAllAssociatedCompanyDetails(signInDetailDo.getPhoneNumber()))
-                .switchIfEmpty(Flux.empty());
+                .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
+                .doOnNext(signInDetailDo -> log.info("verification successful"));
     }
 
 
@@ -165,7 +163,7 @@ public class AuthService {
         return String.valueOf((int) Math.floor(100000 + Math.random() * 900000));
     }
 
-    private Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
+    public Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
         return accountRepository.findByPhoneNumber(phoneNumber)
                 .map(AccountDO::getAccountId)
                 .flatMap(companyRepository::findByCompanyId);
