@@ -11,6 +11,7 @@ import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -45,6 +46,7 @@ public class AuthController {
         return authService.verify(phoneNumber, code)
                 .map(CompanyMapper.INSTANCE::toDTO)
                 .collectList()
+                .filter(companyDtos -> companyDtos.size() > 0)
                 .map(companyDos -> ResponseEntity.ok()
                         .header("temp-authorization-token", authService.createTemporaryToken(phoneNumber, code))
                         .body(companyDos)
