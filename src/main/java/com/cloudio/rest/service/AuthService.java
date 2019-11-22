@@ -97,8 +97,12 @@ public class AuthService {
     public Flux<CompanyDO> verify(final String phoneNumber, final String code) {
         log.info("verification start for phone number {} code is {}", phoneNumber, code);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
+                .doOnNext(signInDetailDo -> log.info("phone number found for verification {} and code in db is {}",
+                        signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
                 .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(code))
-                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber));
+                .doOnNext(signInDetailDo -> log.info("verification successful"))
+                .flatMapMany(signInDetailDO -> retrieveAllAssociatedCompanyDetails(phoneNumber))
+                .switchIfEmpty(Flux.empty());
     }
 
 
