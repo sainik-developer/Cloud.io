@@ -34,7 +34,7 @@ public class AccountDO {
     @LastModifiedDate
     private LocalDateTime updated;
     private String firebaseAuthToken;
-    private final AccountStatus status = AccountStatus.ACTIVE;
+    private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
 
 }
