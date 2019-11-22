@@ -15,7 +15,6 @@
 
     <properties>
         <swagger.version>3.0.0-SNAPSHOT</swagger.version>
-        <mokito.version>1.9.5</mokito.version>
         <testng.version>7.0.0</testng.version>
 
         <commons-io.version>2.5</commons-io.version>
