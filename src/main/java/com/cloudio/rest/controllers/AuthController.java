@@ -48,9 +48,9 @@ public class AuthController {
                 .flatMap(aBoolean -> authService.retrieveAllAssociatedCompanyDetails(phoneNumber)
                         .map(CompanyMapper.INSTANCE::toDTO)
                         .collectList())
-                .map(companyDos -> ResponseEntity.ok()
+                .map(companyDtos -> ResponseEntity.ok()
                         .header("temp-authorization-token", authService.createTemporaryToken(phoneNumber, code))
-                        .body(companyDos)
+                        .body(companyDtos)
                 )
                 .doOnNext(listResponseEntity -> log.info("verify finished {}", phoneNumber))
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));

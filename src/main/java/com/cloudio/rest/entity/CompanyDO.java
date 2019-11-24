@@ -26,8 +26,8 @@ public class CompanyDO {
     private String companyAvatarUrl;
     private CompanyStatus companyStatus;
     @CreatedDate
-    private LocalDateTime createdDate;
+    private LocalDateTime created;
     @LastModifiedDate
-    private LocalDateTime updatedDate;
+    private LocalDateTime updated;
 
 }

@@ -51,4 +51,10 @@ public class GroupErrorAdvice {
     public ResponseDTO invalidTokenException(final Exception e) {
         return new ResponseDTO(null, "invalid token", null);
     }
+
+    @ExceptionHandler(value = CompanyNameNotUniqueException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseDTO companyNameNotUniqueException(final Exception e) {
+        return new ResponseDTO(null, "Company name already in use", null);
+    }
 }

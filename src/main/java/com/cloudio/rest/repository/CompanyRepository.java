@@ -10,5 +10,6 @@ public interface CompanyRepository extends ReactiveMongoRepository<CompanyDO, St
 
     Mono<CompanyDO> findByCompanyId(final String companyId);
 
+    Mono<CompanyDO> findByName(final String name);
 
 }

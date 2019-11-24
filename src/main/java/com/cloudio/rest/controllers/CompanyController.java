@@ -10,6 +10,7 @@ import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.AuthService;
+import com.cloudio.rest.service.CompanyService;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class CompanyController {
     private final CompanyRepository companyRepository;
     private final AWSS3Services awss3Services;
     private final AccountService accountService;
+    private final CompanyService companyService;
 
     @ApiResponses(value = {
             @ApiResponse(code = 201, response = CompanyDTO.class, message = "Company is created by admin"),
@@ -44,6 +46,8 @@ public class CompanyController {
                                           @RequestPart(value = "image") Mono<FilePart> file) {
         log.info("Company going to be created with ");
         return authService.isValidToken(authorizationToken)
+                .flatMap(s -> companyService.isCompanyNameUnique(companyDTO.getName()))
+                .filter(Boolean::booleanValue)
                 .flatMap(phoneNumber -> awss3Services.uploadFileInS3(file))
                 .map(companyImageUrl -> {
                     companyDTO.setCompanyId("CIO:COM:" + UUID.randomUUID().toString());
