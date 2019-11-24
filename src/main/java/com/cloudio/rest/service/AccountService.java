@@ -3,6 +3,7 @@ package com.cloudio.rest.service;
 import com.cloudio.rest.dto.AccountDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.mapper.AccountMapper;
+import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class AccountService {
                 .type(accountType)
                 .firstName(firstName)
                 .lastName(lastname)
+                .status(AccountStatus.ACTIVE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build())
