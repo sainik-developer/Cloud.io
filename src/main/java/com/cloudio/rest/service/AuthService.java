@@ -102,7 +102,6 @@ public class AuthService {
                 .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code));
     }
 
-
     public Mono<String> isValidToken(final String tempToken) {
         final TempAuthToken authToken = decodeTempAuthToken(tempToken);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
@@ -164,7 +163,7 @@ public class AuthService {
 
     public Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
         return accountRepository.findByPhoneNumber(phoneNumber)
-                .map(AccountDO::getAccountId)
+                .map(AccountDO::getCompanyId)
                 .flatMap(companyRepository::findByCompanyId);
     }
 
