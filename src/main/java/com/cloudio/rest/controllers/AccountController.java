@@ -35,6 +35,7 @@ public class AccountController {
             @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is fetched"),
             @ApiResponse(code = 404, response = ResponseDTO.class, message = "No active account found"),
     })
+    @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountMapper.INSTANCE::toDTO)
