@@ -1,6 +1,7 @@
 package com.cloudio.rest.dto;
 
 import com.cloudio.rest.validator.ValidPhoneNumber;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,7 @@ import javax.validation.constraints.NotEmpty;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class InviteAccountDTO {
     @ValidPhoneNumber
     private String phoneNumber;
