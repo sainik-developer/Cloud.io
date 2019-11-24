@@ -16,9 +16,12 @@ public class MongoReactiveConfig extends AbstractReactiveMongoConfiguration {
     @Value("${spring.data.mongodb.database}")
     private String dbName;
 
+    @Value("${spring.data.mongodb.connection}")
+    private String connection;
+
     @Override
     public MongoClient reactiveMongoClient() {
-        return MongoClients.create();
+        return MongoClients.create(connection);
     }
 
     @Override
