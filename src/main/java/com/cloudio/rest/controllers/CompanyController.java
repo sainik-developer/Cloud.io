@@ -2,6 +2,7 @@ package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.exception.CompanyNameNotUniqueException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.pojo.AccountType;
@@ -47,8 +48,13 @@ public class CompanyController {
         log.info("Company going to be created with ");
         return authService.isValidToken(authorizationToken)
                 .flatMap(s -> companyService.isCompanyNameUnique(companyDTO.getName()))
-                .filter(Boolean::booleanValue)
-                .flatMap(phoneNumber -> awss3Services.uploadFileInS3(file))
+                .map(unique -> {
+                    if (!unique) {
+                        throw new CompanyNameNotUniqueException();
+                    }
+                    return "";
+                })
+                .flatMap(emptyStr -> awss3Services.uploadFileInS3(file))
                 .map(companyImageUrl -> {
                     companyDTO.setCompanyId("CIO:COM:" + UUID.randomUUID().toString());
                     companyDTO.setCompanyAvatarUrl(companyImageUrl);
