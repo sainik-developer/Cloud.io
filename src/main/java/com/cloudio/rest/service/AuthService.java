@@ -64,7 +64,7 @@ public class AuthService {
                         .map(aBoolean -> "Sms is sent where retry count is " + signInDetailDo.getRetry())
                         .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime."))
                 )
-                .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(generateSMSCode()).updated(LocalDateTime.now()).build())
+                .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(generateSMSCode()).build())
                         .doOnNext(signInDetailDo -> log.info("Number had arrived for first time to sign up {}", signInDetailDo.getPhoneNumber()))
                         .flatMap(signInCodeRepository::save)
                         .flatMap(signInDetailDo -> askFastService.doAuthAndSendSMS(signInDetailDo.getPhoneNumber(), "Your verification code is " + signInDetailDo.getSmsCode())
