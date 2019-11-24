@@ -32,6 +32,16 @@ public class AccountController {
     private final AccountService accountService;
 
     @ApiResponses(value = {
+            @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is fetched"),
+            @ApiResponse(code = 404, response = ResponseDTO.class, message = "No active account found"),
+    })
+    Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+    }
+
+    @ApiResponses(value = {
             @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is updated successfully"),
             @ApiResponse(code = 404, response = ResponseDTO.class, message = "No active account found"),
             @ApiResponse(code = 401, response = ResponseDTO.class, message = "user is unauthorized to access the system")
