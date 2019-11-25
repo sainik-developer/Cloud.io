@@ -132,12 +132,7 @@ public class AuthService {
     }
 
     private Mono<TempAuthToken> tokenValid(TempAuthToken authToken) {
-        return isTokenValid(authToken.getCreateTime()) ? Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
-    }
-
-    private boolean isTokenValid(LocalDateTime createTime) {
-        long minutes = ChronoUnit.MINUTES.between(createTime, LocalDateTime.now());
-        return minutes <= 10;
+        return ChronoUnit.MINUTES.between(authToken.getCreateTime(), LocalDateTime.now()) <= TEMP_TOKEN_SPAN_IN_MIN ? Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
