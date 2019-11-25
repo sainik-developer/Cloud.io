@@ -2,3 +2,4 @@ target/*
 *.iml
 .idea/*
 spring-sandbox-cloudio.log
+src/main/resources/application-local.properties
