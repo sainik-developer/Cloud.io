@@ -37,8 +37,10 @@ public class AccountController {
     })
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
+        log.info("account details to be fetched is {}", accountId);
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountMapper.INSTANCE::toDTO)
+                .doOnNext(accountDto -> log.info("fetched account details is {}", accountDto))
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
