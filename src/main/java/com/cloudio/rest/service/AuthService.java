@@ -42,7 +42,8 @@ public class AuthService {
 
     @Value("${cloudio.signup.maxRetry}")
     private Integer maxRetry;
-
+    @Value("${cloudio.signup.tempTokenExpireTime}")
+    private Integer TEMP_TOKEN_SPAN_IN_MIN;
     @Value("${cloudio.signup.cool_of_in_min_for_retries}")
     private Integer COOL_OF_IN_MIN_FOR_RETRIES;
 
@@ -115,26 +116,28 @@ public class AuthService {
     }
 
     public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
-        final TempAuthToken authToken = decodeTempAuthToken(tempAuthTokenStr);
-        if(!isTokenValid(authToken.getCreateTime())){
-            throw new InvalidTempTokenException("Temporary  token expired");
-        }
-        log.info("auth token is {}", authToken);
-        return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
-                .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
-                .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
-                .doOnNext(signInDetailDo -> log.info("temp token authentication is successful for phoneNumber {}", signInDetailDo.getPhoneNumber()))
-                .doOnNext(signInDetailDo -> signInCodeRepository.delete(signInDetailDo).subscribe())
-                .flatMap(signInDetailDo -> accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
-                        .flatMap(accountDO -> {
-                            log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
-                            return getAccessToken(accountDO.getAccountId());
-                        }).switchIfEmpty(Mono.error(new SuspiciousStateException())));
+        return Mono.just(decodeTempAuthToken(tempAuthTokenStr))
+                .flatMap(this::tokenValid)
+                .flatMap(authToken -> signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
+                        .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
+                        .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
+                        .doOnNext(signInDetailDo -> log.info("temp token authentication is successful for phoneNumber {}", signInDetailDo.getPhoneNumber()))
+                        .doOnNext(signInDetailDo -> signInCodeRepository.delete(signInDetailDo).subscribe())
+                        .flatMap(signInDetailDo -> accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
+                                .flatMap(accountDO -> {
+                                    log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
+                                    return getAccessToken(accountDO.getAccountId());
+                                }).switchIfEmpty(Mono.error(new SuspiciousStateException()))));
+
+    }
+
+    private Mono<TempAuthToken> tokenValid(TempAuthToken authToken) {
+        return isTokenValid(authToken.getCreateTime()) ? Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
     }
 
     private boolean isTokenValid(LocalDateTime createTime) {
         long minutes = ChronoUnit.MINUTES.between(createTime, LocalDateTime.now());
-        return minutes <= 10 ;
+        return minutes <= 10;
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
