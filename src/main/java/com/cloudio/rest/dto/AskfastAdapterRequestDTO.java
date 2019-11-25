@@ -15,7 +15,7 @@ public class AskfastAdapterRequestDTO {
     private String address;
     private String url;
     private AdapterType adapterType = AdapterType.SMS;
-    private final String senderName = "QRing";
+    private final String senderName = "Cloudio";
 
     @AllArgsConstructor
     public static enum AdapterType {

@@ -2,6 +2,7 @@ package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.dto.VerifyResponseDTO;
 import com.cloudio.rest.exception.InvalidTokenException;
 import com.cloudio.rest.exception.VerificationException;
 import com.cloudio.rest.mapper.CompanyMapper;
@@ -39,8 +40,8 @@ public class AuthController {
             @ApiResponse(code = 401, response = String.class, message = "Phone number is not found or code is not matched")
     })
     @PostMapping("/verify/{phoneNumber}/{code}")
-    public Mono<ResponseEntity<List<CompanyDTO>>> verify(@PathVariable("phoneNumber") final String phoneNumber,
-                                                         @PathVariable("code") final String code) {
+    public Mono<VerifyResponseDTO> verify(@PathVariable("phoneNumber") final String phoneNumber,
+                                          @PathVariable("code") final String code) {
         log.info("cloud io verify entering with phone Number {} ", phoneNumber);
         return authService.verify(phoneNumber, code)
                 .filter(Boolean::booleanValue)
@@ -48,9 +49,10 @@ public class AuthController {
                 .flatMap(aBoolean -> authService.retrieveAllAssociatedCompanyDetails(phoneNumber)
                         .map(CompanyMapper.INSTANCE::toDTO)
                         .collectList())
-                .map(companyDtos -> ResponseEntity.ok()
-                        .header("temp-authorization-token", authService.createTemporaryToken(phoneNumber, code))
-                        .body(companyDtos)
+                .map(companyDtos -> VerifyResponseDTO.builder()
+                        .companies(companyDtos)
+                        .token(authService.createTemporaryToken(phoneNumber, code))
+                        .build()
                 )
                 .doOnNext(listResponseEntity -> log.info("verify finished {}", phoneNumber))
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
@@ -66,8 +68,7 @@ public class AuthController {
                                               @RequestHeader("temp-authorization-token") final String tempAuthToken) {
         log.info("LoginHandler entering with company Id  {} with and temp-authorization-token {}", companyId, tempAuthToken);
         return authService.login(tempAuthToken, companyId)
-                .map(s -> ResponseEntity.ok()
-                        .header("Authorization", s).body(""))
+                .map(s -> ResponseEntity.ok().body("Authorization:" + s))
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
 
