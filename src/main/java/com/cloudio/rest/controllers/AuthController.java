@@ -36,7 +36,7 @@ public class AuthController {
     }
 
     @ApiResponses(value = {
-            @ApiResponse(code = 200, response = CompanyDTO.class, responseContainer = "List", message = "Account is updated successfully"),
+            @ApiResponse(code = 200, response = VerifyResponseDTO.class, responseContainer = "List", message = "Account is updated successfully"),
             @ApiResponse(code = 401, response = String.class, message = "Phone number is not found or code is not matched")
     })
     @PostMapping("/verify/{phoneNumber}/{code}")
