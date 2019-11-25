@@ -24,6 +24,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 
@@ -115,6 +116,9 @@ public class AuthService {
 
     public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
         final TempAuthToken authToken = decodeTempAuthToken(tempAuthTokenStr);
+        if(!isTokenValid(authToken.getCreateTime())){
+            throw new InvalidTempTokenException("Temporary  token expired");
+        }
         log.info("auth token is {}", authToken);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
                 .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
@@ -128,12 +132,17 @@ public class AuthService {
                         }).switchIfEmpty(Mono.error(new SuspiciousStateException())));
     }
 
+    public boolean isTokenValid(LocalDateTime createTime) {
+        long minutes = ChronoUnit.MINUTES.between(createTime, LocalDateTime.now());
+        return (minutes <= 10) ? true : false;
+    }
+
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
         try {
             final String[] values = new String(Base64.decodeBase64(tempAuthTokenStr)).split("#");
             return TempAuthToken.builder().phoneNumber(values[0]).code(values[1]).createTime(LocalDateTime.parse(values[2])).build();
         } catch (final Exception e) {
-            throw new InvalidTempTokenException();
+            throw new InvalidTempTokenException("Temp token is invalid");
         }
     }
 

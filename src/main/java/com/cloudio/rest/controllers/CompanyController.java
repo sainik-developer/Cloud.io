@@ -65,6 +65,6 @@ public class CompanyController {
                 .map(CompanyMapper.INSTANCE::fromDTO)
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new InvalidTempTokenException()));
+                .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 }
