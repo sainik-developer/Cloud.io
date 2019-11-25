@@ -31,7 +31,7 @@ public class GroupErrorAdvice {
     @ExceptionHandler(value = InvalidTempTokenException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseDTO invalidTempTokenException(final Exception e) {
-        return new ResponseDTO(HttpStatus.NOT_FOUND.value(), "Temp token is invalid", null);
+        return new ResponseDTO(HttpStatus.NOT_FOUND.value(), e.getMessage(), null);
     }
 
     @ExceptionHandler(value = SuspiciousStateException.class)

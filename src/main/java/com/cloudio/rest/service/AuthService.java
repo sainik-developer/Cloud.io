@@ -132,9 +132,9 @@ public class AuthService {
                         }).switchIfEmpty(Mono.error(new SuspiciousStateException())));
     }
 
-    public boolean isTokenValid(LocalDateTime createTime) {
+    private boolean isTokenValid(LocalDateTime createTime) {
         long minutes = ChronoUnit.MINUTES.between(createTime, LocalDateTime.now());
-        return (minutes <= 10) ? true : false;
+        return minutes <= 10 ;
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
