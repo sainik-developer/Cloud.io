@@ -17,7 +17,6 @@ import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -32,7 +31,6 @@ public class CompanyController {
 
     private final AuthService authService;
     private final CompanyRepository companyRepository;
-    private final AWSS3Services awss3Services;
     private final AccountService accountService;
     private final CompanyService companyService;
 
