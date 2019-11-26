@@ -117,7 +117,7 @@ public class AuthService {
 
     public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
         return Mono.just(decodeTempAuthToken(tempAuthTokenStr))
-                .flatMap(this::tokenValid)
+//                .flatMap(this::tokenValid)
                 .flatMap(authToken -> signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
                         .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
                         .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
@@ -128,7 +128,6 @@ public class AuthService {
                                     log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
                                     return getAccessToken(accountDO.getAccountId());
                                 }).switchIfEmpty(Mono.error(new SuspiciousStateException()))));
-
     }
 
     private Mono<TempAuthToken> tokenValid(TempAuthToken authToken) {
