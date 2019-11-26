@@ -43,8 +43,7 @@ public class CompanyController {
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
     public Mono<CompanyDTO> createCompany(@Validated @RequestPart("company") CompanyDTO companyDTO,
-                                          @RequestHeader("temp-authorization-token") final String authorizationToken,
-                                          @RequestPart(value = "image") Mono<FilePart> file) {
+                                          @RequestHeader("temp-authorization-token") final String authorizationToken) {
         log.info("Company going to be created with ");
         return authService.isValidToken(authorizationToken)
                 .flatMap(s -> companyService.isCompanyNameUnique(companyDTO.getName()))
@@ -54,7 +53,6 @@ public class CompanyController {
                     }
                     return "";
                 })
-                .flatMap(emptyStr -> awss3Services.uploadFileInS3(file))
                 .map(companyImageUrl -> {
                     companyDTO.setCompanyId("CIO:COM:" + UUID.randomUUID().toString());
                     companyDTO.setCompanyAvatarUrl(companyImageUrl);

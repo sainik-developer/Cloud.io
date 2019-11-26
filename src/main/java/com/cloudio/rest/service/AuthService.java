@@ -13,6 +13,7 @@ import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.SignInCodeRepository;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
@@ -38,11 +39,10 @@ public class AuthService {
     private final AccessTokenRepository accessTokenRepository;
     private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
-    private final AccountService accountService;
 
     @Value("${cloudio.signup.maxRetry}")
     private Integer maxRetry;
-    @Value("${cloudio.signup.tempTokenExpireTime}")
+    @Value("${cloudio.signup.tempTokenExpireTime.min}")
     private Integer TEMP_TOKEN_SPAN_IN_MIN;
     @Value("${cloudio.signup.cool_of_in_min_for_retries}")
     private Integer COOL_OF_IN_MIN_FOR_RETRIES;
@@ -132,7 +132,8 @@ public class AuthService {
     }
 
     private Mono<TempAuthToken> tokenValid(TempAuthToken authToken) {
-        return ChronoUnit.MINUTES.between(authToken.getCreateTime(), LocalDateTime.now()) <= TEMP_TOKEN_SPAN_IN_MIN ? Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
+        return ChronoUnit.MINUTES.between(authToken.getCreateTime(), LocalDateTime.now()) <= TEMP_TOKEN_SPAN_IN_MIN ?
+                Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
