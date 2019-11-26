@@ -42,7 +42,7 @@ public class CompanyController {
     })
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
-    public Mono<CompanyDTO> createCompany(@Validated @RequestPart("company") CompanyDTO companyDTO,
+    public Mono<CompanyDTO> createCompany(@Validated @RequestBody CompanyDTO companyDTO,
                                           @RequestHeader("temp-authorization-token") final String authorizationToken) {
         log.info("Company going to be created with ");
         return authService.isValidToken(authorizationToken)
