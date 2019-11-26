@@ -1,6 +1,7 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.CompanyDTO;
+import com.cloudio.rest.dto.LoginResponseDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.VerifyResponseDTO;
 import com.cloudio.rest.exception.InvalidTokenException;
@@ -64,11 +65,11 @@ public class AuthController {
 
     })
     @PostMapping("/login/{companyId}")
-    public Mono<ResponseEntity<String>> login(@PathVariable("companyId") final String companyId,
-                                              @RequestHeader("temp-authorization-token") final String tempAuthToken) {
+    public Mono<LoginResponseDTO> login(@PathVariable("companyId") final String companyId,
+                                        @RequestHeader("temp-authorization-token") final String tempAuthToken) {
         log.info("LoginHandler entering with company Id  {} with and temp-authorization-token {}", companyId, tempAuthToken);
         return authService.login(tempAuthToken, companyId)
-                .map(s -> ResponseEntity.ok().body("Authorization:" + s))
+                .map(s -> LoginResponseDTO.builder().authorization(s).build())
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
 
