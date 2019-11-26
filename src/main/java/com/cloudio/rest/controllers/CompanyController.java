@@ -53,7 +53,6 @@ public class CompanyController {
                 })
                 .map(companyImageUrl -> {
                     companyDTO.setCompanyId("CIO:COM:" + UUID.randomUUID().toString());
-                    companyDTO.setCompanyAvatarUrl(companyImageUrl);
                     companyDTO.setCompanyStatus(CompanyStatus.NOT_VERIFIED);
                     return companyDTO;
                 })
