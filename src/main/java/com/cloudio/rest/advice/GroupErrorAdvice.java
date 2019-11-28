@@ -57,4 +57,10 @@ public class GroupErrorAdvice {
     public ResponseDTO companyNameNotUniqueException(final Exception e) {
         return new ResponseDTO(null, "Company name already in use", null);
     }
+
+    @ExceptionHandler(value = SubscriptionException.class)
+    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+    public ResponseDTO invalidNonceException(final Exception e) {
+        return new ResponseDTO(HttpStatus.EXPECTATION_FAILED.value(), e.getMessage(), null);
+    }
 }
