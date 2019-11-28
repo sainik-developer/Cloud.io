@@ -119,7 +119,7 @@ public class AuthService {
 
     public Mono<LoginResponseDTO> login(final String tempAuthTokenStr, final String companyId) {
         return Mono.just(decodeTempAuthToken(tempAuthTokenStr))
-//                .flatMap(this::tokenValid)
+                .flatMap(this::tokenValid)
                 .flatMap(authToken -> signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
                         .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
                         .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
