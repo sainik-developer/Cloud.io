@@ -1,4 +1,4 @@
-package com.cloudio.rest.model;
+package com.cloudio.rest.pojo;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

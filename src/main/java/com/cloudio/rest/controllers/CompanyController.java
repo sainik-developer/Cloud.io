@@ -8,7 +8,6 @@ import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.CompanyStatus;
 import com.cloudio.rest.repository.CompanyRepository;
-import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.AuthService;
 import com.cloudio.rest.service.CompanyService;
@@ -42,7 +41,7 @@ public class CompanyController {
     @ResponseStatus(value = HttpStatus.CREATED)
     public Mono<CompanyDTO> createCompany(@Validated @RequestBody CompanyDTO companyDTO,
                                           @RequestHeader("temp-authorization-token") final String authorizationToken) {
-        log.info("Company going to be created with ");
+        log.info("Company going to be created with {}", companyDTO);
         return authService.isValidToken(authorizationToken)
                 .flatMap(s -> companyService.isCompanyNameUnique(companyDTO.getName()))
                 .map(unique -> {
@@ -56,10 +55,10 @@ public class CompanyController {
                     companyDTO.setCompanyStatus(CompanyStatus.NOT_VERIFIED);
                     return companyDTO;
                 })
-                .doOnNext(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null).subscribe())
                 .map(CompanyMapper.INSTANCE::fromDTO)
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
+                .doOnNext(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null).subscribe())
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 }
