@@ -28,8 +28,8 @@ public class AccountService {
 
     public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return Mono.zip(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
-                        .doOnNext(accountDO -> log.info("got1")).doOnError(throwable -> log.error(throwable.getMessage())),
-                companyRepository.findByCompanyId(companyId).doOnNext(accountDO -> log.info("got2")).doOnError(throwable -> log.error(throwable.getMessage())))
+                        .doOnNext(accountDO -> log.info("saved account where details is {}", accountDO)).doOnError(throwable -> log.error("account creation is failed due to {}", throwable.getMessage())),
+                companyRepository.findByCompanyId(companyId).doOnNext(companyDO -> log.info("account's company is retrieved {}", companyDO)).doOnError(throwable -> log.error("company retrieval is failed due to {}", throwable.getMessage())))
                 .doOnError(throwable -> log.error("error"))
                 .doOnNext(accountDOCompanyDOTuple2 -> log.info("Account with details {} is saved in db and corresponding company details is {}", accountDOCompanyDOTuple2.getT1(), accountDOCompanyDOTuple2.getT2()))
                 .flatMap(accountDOCompanyDOTuple -> createAskfastAccount(accountDOCompanyDOTuple).map(askfastDetail -> {
