@@ -1,7 +1,5 @@
 package com.cloudio.rest.service;
 
-import com.amazonaws.util.StringUtils;
-import com.cloudio.rest.dto.AccessTokenRequestDTO;
 import com.cloudio.rest.dto.AskfastAdapterRequestDTO;
 import com.cloudio.rest.dto.AskfastCreateSubAccountRequestDTO;
 import com.cloudio.rest.dto.AskfastImpersonateSubAccountDTO;
@@ -19,10 +17,7 @@ import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Log4j2
 @Service
@@ -30,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AskFastService {
 
     private final WebClient webClient;
+    private final AskFastAuthService askFastAuthService;
 
     @Value("${askfast.base.url}")
     private String BASE_URL;
@@ -55,30 +51,10 @@ public class AskFastService {
     @Value("${askfast.root.refreshToken}")
     private String ROOT_REFRESH_TOKEN;
 
-    private final AtomicReference<String> CACHED_ACCESS_TOKEN = new AtomicReference<>(null);
-    private final AtomicLong lastCachedTime = new AtomicLong(0);
-
     private Mono<String> getRootAuthToken() {
-        return System.currentTimeMillis() - lastCachedTime.longValue() > 100000 || StringUtils.isNullOrEmpty(CACHED_ACCESS_TOKEN.get()) ? fetchAuthToken(ROOT_ACCOUNT_ID, ROOT_REFRESH_TOKEN) : Mono.just(CACHED_ACCESS_TOKEN.get());
+        return askFastAuthService.fetchAuthToken(ROOT_ACCOUNT_ID, ROOT_REFRESH_TOKEN);
     }
 
-    private Mono<String> fetchAuthToken(final String accountId, final String refreshToken) {
-        return webClient.post()
-                .uri(BASE_URL + AUTH_URL)
-                .header(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType())
-                .syncBody(AccessTokenRequestDTO.builder().accountId(accountId).refreshToken(refreshToken).build())
-                .exchange()
-                .doOnError(throwable -> log.error("error while calling {}", throwable.getMessage()))
-                .doOnNext(clientResponse -> log.info("ask-fast access token response is fetched successfully"))
-                .filter(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
-                .flatMap(clientResponse -> clientResponse.bodyToMono(ObjectNode.class))
-                .map(objectNode -> objectNode.get("result"))
-                .map(jsonNode -> jsonNode.get("accessToken").asText())
-                .doOnNext(accessToken -> {
-                    lastCachedTime.set(System.currentTimeMillis());
-                    CACHED_ACCESS_TOKEN.set(accessToken);
-                });
-    }
 
     private Mono<Boolean> sendSms(final String phoneNumber, final String smsContent, final String accessToken) {
         return sendAdapterRequest(phoneNumber, smsContent, AskfastAdapterRequestDTO.AdapterType.SMS, accessToken)
@@ -123,9 +99,9 @@ public class AskFastService {
 
     public Mono<AskfastDetail> createMemberAccount(final AccountDO memberAccountDO, final AccountDO adminAccountDO, final String companyName) {
         log.info("Member account is going to be created on ask-fast platform");
-        return fetchAuthToken(adminAccountDO.getAskfastDetail().getAccountId(), adminAccountDO.getAskfastDetail().getRefreshToken())
-                .flatMap(companyAdminAuthToken -> createSubAccountAtAskFast(createSubAccountRequestDTO(memberAccountDO.getPhoneNumber() + "-" + companyName + "@cloud.io",
-                        memberAccountDO.getPhoneNumber() + "-" + companyName + "@" + LocalDateTime.now(), memberAccountDO.getFirstName() + memberAccountDO.getLastName(),
+        return askFastAuthService.fetchAuthToken(adminAccountDO.getAskfastDetail().getAccountId(), adminAccountDO.getAskfastDetail().getRefreshToken())
+                .flatMap(companyAdminAuthToken -> createSubAccountAtAskFast(createSubAccountRequestDTO(memberAccountDO.getAccountId(),
+                        "Welcome1$", memberAccountDO.getFirstName() + memberAccountDO.getLastName(),
                         memberAccountDO.getPhoneNumber(), memberAccountDO.getPhoneNumber() + "-" + companyName + "@cloud.io"), companyAdminAuthToken)
                         .doOnError(throwable -> log.error("Creating sub account failed due to " + throwable.getMessage()))
                         .doOnNext(subAccountId -> log.info("Creating sub account is successful and sub account id for member is {}", subAccountId))
@@ -176,7 +152,7 @@ public class AskFastService {
                 .syncBody(AskfastImpersonateSubAccountDTO.builder().accountId(parentAccountId).refreshToken(parentRefreshToken).subAccountId(subAccountId).build())
                 .exchange()
                 .doOnError(throwable -> log.error("error while calling {}", throwable.getMessage()))
-                .doOnNext(clientResponse -> log.info("ask-fast access token response is fetched successfully"))
+                .doOnNext(clientResponse -> log.info("ask-fast access token response is fetched successfully after impersonation"))
                 .filter(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
                 .flatMap(clientResponse -> clientResponse.bodyToMono(ObjectNode.class))
                 .map(objectNode -> objectNode.get("result"))
