@@ -119,7 +119,7 @@ public class AskFastService {
         log.info("Admin account is going to be created on ask-fast platform");
         return getRootAuthToken()
                 .doOnNext(s -> log.info("Root account token is fetched successfully "))
-                .flatMap(rootAccountAuthToken -> createSubAccountAtAskFast(createSubAccountRequestDTO(companyName + "@cloud.io",
+                .flatMap(rootAccountAuthToken -> createSubAccountAtAskFast(createSubAccountRequestDTO(accountDO.getAccountId(),
                         "Welcome1$", companyName, accountDO.getPhoneNumber(), companyName + "@cloud.io"), rootAccountAuthToken)
                         .doOnError(throwable -> log.error("Creating sub account failed due to " + throwable.getMessage()))
                         .doOnNext(subAccountId -> log.info("Creating sub account is successful and sub account id for member is {}", subAccountId))
