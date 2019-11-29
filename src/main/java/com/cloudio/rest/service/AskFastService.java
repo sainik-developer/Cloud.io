@@ -55,7 +55,6 @@ public class AskFastService {
         return askFastAuthService.fetchAuthToken(ROOT_ACCOUNT_ID, ROOT_REFRESH_TOKEN);
     }
 
-
     private Mono<Boolean> sendSms(final String phoneNumber, final String smsContent, final String accessToken) {
         return sendAdapterRequest(phoneNumber, smsContent, AskfastAdapterRequestDTO.AdapterType.SMS, accessToken)
                 .doOnNext(aBoolean -> log.info("SMS is sent successfully"))

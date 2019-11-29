@@ -32,6 +32,6 @@ public class AccountDTO {
     private final AccountStatus status = AccountStatus.ACTIVE;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private AccountType type;
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @JsonIgnore
     private AskfastDetail askfastDetail;
 }
