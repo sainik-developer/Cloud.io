@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 @Log4j2
 @Service
 @RequiredArgsConstructor
-@CacheConfig(cacheNames = {"authorization"})
 public class AskFastAuthService {
 
     private final WebClient webClient;
