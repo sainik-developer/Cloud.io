@@ -2,6 +2,7 @@ package com.cloudio.rest.dto;
 
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
+import com.cloudio.rest.pojo.AskfastDetail;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,4 +32,6 @@ public class AccountDTO {
     private final AccountStatus status = AccountStatus.ACTIVE;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private AccountType type;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private AskfastDetail askfastDetail;
 }

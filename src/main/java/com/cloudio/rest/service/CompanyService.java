@@ -1,6 +1,5 @@
 package com.cloudio.rest.service;
 
-import com.cloudio.rest.entity.CompanyDO;
 import com.cloudio.rest.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

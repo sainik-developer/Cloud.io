@@ -12,11 +12,8 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 @Log4j2
 @RestController
@@ -69,7 +66,6 @@ public class AuthController {
                                         @RequestHeader("temp-authorization-token") final String tempAuthToken) {
         log.info("LoginHandler entering with company Id  {} with and temp-authorization-token {}", companyId, tempAuthToken);
         return authService.login(tempAuthToken, companyId)
-                .map(s -> LoginResponseDTO.builder().authorization(s).build())
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
 

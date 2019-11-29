@@ -1,19 +1,21 @@
 package com.cloudio.rest.service;
 
+import com.cloudio.rest.dto.LoginResponseDTO;
 import com.cloudio.rest.entity.AccessTokenDO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.entity.CompanyDO;
 import com.cloudio.rest.entity.SignInDetailDO;
-import com.cloudio.rest.exception.*;
-import com.cloudio.rest.model.TempAuthToken;
+import com.cloudio.rest.exception.InvalidTempTokenException;
+import com.cloudio.rest.exception.SignInException;
+import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.pojo.AccountStatus;
+import com.cloudio.rest.pojo.TempAuthToken;
 import com.cloudio.rest.repository.AccessTokenRepository;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.SignInCodeRepository;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
@@ -115,9 +117,9 @@ public class AuthService {
         return Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
     }
 
-    public Mono<String> login(final String tempAuthTokenStr, final String companyId) {
+    public Mono<LoginResponseDTO> login(final String tempAuthTokenStr, final String companyId) {
         return Mono.just(decodeTempAuthToken(tempAuthTokenStr))
-//                .flatMap(this::tokenValid)
+                .flatMap(this::tokenValid)
                 .flatMap(authToken -> signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
                         .doOnNext(signInDetailDo -> log.info("Phone number is found in signincodes {}", signInDetailDo.getPhoneNumber()))
                         .filter(signInDetailDo -> signInDetailDo.getSmsCode().equals(authToken.getCode()))
@@ -126,13 +128,14 @@ public class AuthService {
                         .flatMap(signInDetailDo -> accountRepository.findByPhoneNumberAndCompanyId(authToken.getPhoneNumber(), companyId)
                                 .flatMap(accountDO -> {
                                     log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
-                                    return getAccessToken(accountDO.getAccountId());
+                                    return getAccessToken(accountDO.getAccountId())
+                                            .map(s -> LoginResponseDTO.builder().authorization(s).accountId(accountDO.getAskfastDetail().getAccountId()).refreshToken(accountDO.getAskfastDetail().getRefreshToken()).build());
                                 }).switchIfEmpty(Mono.error(new SuspiciousStateException()))));
     }
 
     private Mono<TempAuthToken> tokenValid(TempAuthToken authToken) {
         return ChronoUnit.MINUTES.between(authToken.getCreateTime(), LocalDateTime.now()) <= TEMP_TOKEN_SPAN_IN_MIN ?
-                Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary  token expired"));
+                Mono.just(authToken) : Mono.error(new InvalidTempTokenException("Temporary token expired"));
     }
 
     public TempAuthToken decodeTempAuthToken(final String tempAuthTokenStr) {
