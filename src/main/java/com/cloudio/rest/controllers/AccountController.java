@@ -1,7 +1,6 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.AccountDTO;
-import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.InviteAccountDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
@@ -62,7 +61,7 @@ public class AccountController {
     }
 
     @ApiResponses(value = {
-            @ApiResponse(code = 201, response = CompanyDTO.class, responseContainer = "List", message = "The list of invited members"),
+            @ApiResponse(code = 201, response = AccountDTO.class, responseContainer = "List", message = "The list of invited members"),
             @ApiResponse(code = 417, response = ResponseDTO.class, message = "User does not have permission to invite someone"),
             @ApiResponse(code = 401, response = ResponseDTO.class, message = "user is unauthorized to access the system")
     })
