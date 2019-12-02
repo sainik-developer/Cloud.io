@@ -1,7 +1,5 @@
 package com.cloudio.rest.entity;
 
-import com.cloudio.rest.pojo.AccountStatus;
-import com.cloudio.rest.pojo.AccountType;
 import io.github.classgraph.json.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,27 +13,18 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@Document("accounts")
+@Document("transaction")
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccountDO {
-
+public class TransactionDO {
     @Id
     private String id;
-
-    private String accountId;
+    private String planId;
+    private String subscriptionId;
     private String companyId;
-    private String phoneNumber;
-    private String firstName;
-    private String lastName;
-    private String jobTitle;
-    private String customerId; // BrainTree Customer Id
+    private String accountId;
     @CreatedDate
     private LocalDateTime created;
     @LastModifiedDate
     private LocalDateTime updated;
-    private String firebaseAuthToken;
-    private AccountStatus status = AccountStatus.ACTIVE;
-    private AccountType type;
-
 }
