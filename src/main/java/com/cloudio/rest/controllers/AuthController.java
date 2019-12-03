@@ -66,7 +66,6 @@ public class AuthController {
                                         @RequestHeader("temp-authorization-token") final String tempAuthToken) {
         log.info("LoginHandler entering with company Id  {} with and temp-authorization-token {}", companyId, tempAuthToken);
         return authService.login(tempAuthToken, companyId)
-                .map(s -> LoginResponseDTO.builder().authorization(s).build())
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
 

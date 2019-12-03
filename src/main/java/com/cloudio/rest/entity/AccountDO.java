@@ -2,6 +2,7 @@ package com.cloudio.rest.entity;
 
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
+import com.cloudio.rest.pojo.AskfastDetail;
 import io.github.classgraph.json.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,5 +38,6 @@ public class AccountDO {
     private String firebaseAuthToken;
     private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
+    private AskfastDetail askfastDetail;
 
 }

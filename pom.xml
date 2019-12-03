@@ -57,6 +57,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
         <!--API documentation using swagger-->
         <dependency>
             <groupId>io.springfox</groupId>
@@ -72,11 +76,6 @@
             <groupId>io.springfox</groupId>
             <artifactId>springfox-spring-webflux</artifactId>
             <version>${swagger.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.bitbucket.tek-nik</groupId>
-            <version>1.0.2</version>
-            <artifactId>spring-swagger-simplified</artifactId>
         </dependency>
         <!--Unit test framework-->
         <dependency>
@@ -182,6 +181,18 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-dependency-plugin</artifactId>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>analyze-deps</id>-->
+            <!--                        <goals>-->
+            <!--                            <goal>analyze-only</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
         </plugins>
     </build>
 </project>
