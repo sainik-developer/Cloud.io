@@ -29,7 +29,7 @@ public class AccountDO {
     private String firstName;
     private String lastName;
     private String jobTitle;
-    private String customerId; // BrainTree Customer Id
+    private String braintreeCustomerId; // BrainTree Customer Id
     @CreatedDate
     private LocalDateTime created;
     @LastModifiedDate

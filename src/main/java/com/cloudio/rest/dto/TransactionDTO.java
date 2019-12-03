@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 public class TransactionDTO {
     @NotBlank(message = "nonse can't be null")
     private String nonse;
-
     private String planId;
     private String subscriptionId;
     @NotBlank(message = "company id can't be null")
