@@ -9,5 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class BraintreeDetails {
+public class BrainTreeDetail {
+    private String planId;
+    private String customerId;
 }

@@ -26,6 +26,7 @@ public class AccountDTO {
     private String firstName;
     private String lastName;
     private String jobTitle;
+    private String profileUrl;
     @JsonIgnore
     private String firebaseAuthToken;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

@@ -20,8 +20,6 @@ public class TransactionDTO {
     private String nonse;
     private String planId;
     private String subscriptionId;
-    @NotBlank(message = "company id can't be null")
-    private String companyId;
     private String accountId;
     private LocalDateTime created;
     private LocalDateTime updated;

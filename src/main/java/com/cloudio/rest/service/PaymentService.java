@@ -1,14 +1,13 @@
 package com.cloudio.rest.service;
 
 import com.braintreegateway.*;
-import com.cloudio.rest.dto.BraintreeTokenDTO;
+import com.cloudio.rest.dto.PaymentClientTokenResponseDTO;
 import com.cloudio.rest.dto.TransactionDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.exception.BrainTreeTokenException;
 import com.cloudio.rest.exception.SubscriptionException;
 import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.mapper.TransactionMapper;
-import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,27 +30,26 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
 
-    public Mono<BraintreeTokenDTO> getClientToken(final String accountId) {
-        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
-                .flatMap(this::createCustomerIfNew)
-                .map(accountDO -> new ClientTokenRequest()
-                        .customerId(accountDO.getBraintreeCustomerId()))
-                .map(clientTokenRequest -> BraintreeTokenDTO
+    public Mono<PaymentClientTokenResponseDTO> getClientToken(final AccountDO accountDO) {
+        return Mono.just(accountDO)
+                .flatMap(this::createCustomerInVault)
+                .map(accountDo -> new ClientTokenRequest().customerId(accountDO.getDetail().getCustomerId()))
+                .map(clientTokenRequest -> PaymentClientTokenResponseDTO
                         .builder()
                         .token(gateway.clientToken().generate(clientTokenRequest))
                         .build())
                 .switchIfEmpty(Mono.error(new BrainTreeTokenException("AccountId invalid")));
     }
 
-    private Mono<AccountDO> createCustomerIfNew(final AccountDO accountDO) {
+    public Mono<AccountDO> createCustomerInVault(final AccountDO accountDO) {
         return Mono.just(accountDO)
-                .filter(accountDo -> !Objects.isNull(accountDo.getBraintreeCustomerId()))
+                .filter(accountDo -> !Objects.isNull(accountDo.getDetail().getCustomerId()))
                 .switchIfEmpty(Mono.just(new CustomerRequest().firstName(accountDO.getFirstName()).lastName(accountDO.getLastName()).phone(accountDO.getPhoneNumber()))
                         .map(gateway.customer()::create)
                         .filter(Result::isSuccess)
                         .map(customerResult -> customerResult.getTarget().getId())
                         .map(brainTreeCustomerId -> {
-                            accountDO.setBraintreeCustomerId(brainTreeCustomerId);
+                            accountDO.getDetail().setCustomerId(brainTreeCustomerId);
                             return accountDO;
                         })
                         .flatMap(accountRepository::save));

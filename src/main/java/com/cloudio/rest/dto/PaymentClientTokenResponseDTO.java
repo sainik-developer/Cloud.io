@@ -13,7 +13,6 @@ import javax.validation.constraints.NotEmpty;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class BraintreeTokenDTO {
-    @NotEmpty
+public class PaymentClientTokenResponseDTO {
     private String token;
 }

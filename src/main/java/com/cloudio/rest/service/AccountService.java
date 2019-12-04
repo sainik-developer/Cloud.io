@@ -8,10 +8,12 @@ import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.AskfastDetail;
+import com.cloudio.rest.pojo.BrainTreeDetail;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
@@ -22,15 +24,20 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
+
+    @Value("${cloud.io.payment.planId}")
+    private String planId;
+
     private final AccountRepository accountRepository;
     private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
+    private final PaymentService paymentService;
 
     public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return Mono.zip(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
                         .doOnNext(accountDO -> log.info("saved account where details is {}", accountDO)).doOnError(throwable -> log.error("account creation is failed due to {}", throwable.getMessage())),
                 companyRepository.findByCompanyId(companyId).doOnNext(companyDO -> log.info("account's company is retrieved {}", companyDO)).doOnError(throwable -> log.error("company retrieval is failed due to {}", throwable.getMessage())))
-                .doOnError(throwable -> log.error("error"))
+                .doOnError(throwable -> log.error("error while zipping account create and company finding with reason {} ", throwable.getMessage()))
                 .doOnNext(accountDOCompanyDOTuple2 -> log.info("Account with details {} is saved in db and corresponding company details is {}", accountDOCompanyDOTuple2.getT1(), accountDOCompanyDOTuple2.getT2()))
                 .flatMap(accountDOCompanyDOTuple -> createAskfastAccount(accountDOCompanyDOTuple).map(askfastDetail -> {
                     accountDOCompanyDOTuple.getT1().setAskfastDetail(askfastDetail);
@@ -38,6 +45,7 @@ public class AccountService {
                 }))
                 .flatMap(accountRepository::save)
                 .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
+                .doOnNext(accountDO -> paymentService.createCustomerInVault(accountDO).subscribe())
                 .map(AccountMapper.INSTANCE::toDTO);
     }
 
@@ -57,6 +65,7 @@ public class AccountService {
     private AccountDO createDO(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return AccountDO.builder()
                 .type(accountType).firstName(firstName)
+                .detail(accountType == AccountType.ADMIN ? BrainTreeDetail.builder().planId(planId).build() : null)
                 .lastName(lastname).status(AccountStatus.ACTIVE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
