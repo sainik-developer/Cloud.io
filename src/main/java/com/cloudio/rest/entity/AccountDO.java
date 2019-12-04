@@ -30,6 +30,7 @@ public class AccountDO {
     private String firstName;
     private String lastName;
     private String jobTitle;
+    private String profileUrl;
     @CreatedDate
     private LocalDateTime created;
     @LastModifiedDate
