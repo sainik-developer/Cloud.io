@@ -19,6 +19,5 @@ public class InviteAccountDTO {
     private String phoneNumber;
     @NotEmpty(message = "invited account should have valid first name")
     private String firstName;
-    @NotEmpty(message = "invited account should have valid last name")
     private String lastName;
 }
