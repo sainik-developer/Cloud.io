@@ -70,7 +70,9 @@ public class AccountController {
     Flux<AccountDTO> inviteMember(@RequestHeader("accountId") final String accountId,
                                   @PathVariable("companyId") final String companyId,
                                   @Validated @RequestBody List<InviteAccountDTO> inviteAccountDtos) {
+        log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);                          
         return accountRepository.findByAccountIdAndCompanyIdAndType(accountId, companyId, AccountType.ADMIN)
+                .doOnNext(accountDo -> log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId))
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
                         inviteAccountDto.getPhoneNumber(),
