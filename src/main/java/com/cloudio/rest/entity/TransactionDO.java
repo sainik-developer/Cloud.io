@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-@Document("transaction")
+@Document("transactions")
 @AllArgsConstructor
 @NoArgsConstructor
 public class TransactionDO {
@@ -21,7 +21,6 @@ public class TransactionDO {
     private String id;
     private String planId;
     private String subscriptionId;
-    private String companyId;
     private String accountId;
     @CreatedDate
     private LocalDateTime created;

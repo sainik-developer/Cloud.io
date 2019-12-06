@@ -37,8 +37,7 @@ public class PaymentService {
                 .map(clientTokenRequest -> PaymentClientTokenResponseDTO
                         .builder()
                         .token(gateway.clientToken().generate(clientTokenRequest))
-                        .build())
-                .switchIfEmpty(Mono.error(new BrainTreeTokenException("AccountId invalid")));
+                        .build());
     }
 
     public Mono<AccountDO> createCustomerInVault(final AccountDO accountDO) {
