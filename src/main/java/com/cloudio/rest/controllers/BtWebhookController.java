@@ -27,7 +27,7 @@ public class BtWebhookController {
 //        log.info("");
 //        webhookNotification.getSubscription().getId();// subscription ID
 
-        log.info("Braintree bt_signature={} and bt_payload={}", webHookRequestDTO.getBt_signature(), webHookRequestDTO.getBt_payload());
+        log.info("Braintree bt_signature={} and bt_payload={}", webHookRequestDTO.getBtSignature(), webHookRequestDTO.getBtPayload());
 
 
     }
