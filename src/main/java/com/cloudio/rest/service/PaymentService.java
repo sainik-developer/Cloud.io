@@ -68,7 +68,6 @@ public class PaymentService {
         SubscriptionRequest request = new SubscriptionRequest()
                 .paymentMethodNonce(transactionDTO.getNonse())
                 .planId(transactionDTO.getPlanId());
-
         Result<Subscription> result = gateway.subscription().create(request);
         if (result.isSuccess()) {
             return result.getSubscription();

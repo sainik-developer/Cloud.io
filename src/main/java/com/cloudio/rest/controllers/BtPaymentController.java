@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/payment")
 @RequiredArgsConstructor
-public class PaymentController {
+public class BtPaymentController {
 
     private final BraintreeGateway gateway;
     private final PaymentService paymentService;
@@ -37,10 +37,5 @@ public class PaymentController {
         return paymentService.subscribe(accountId, transactionDTO);
     }
 
-    @PostMapping("/failed")
-    void someMethod(@RequestParam("bt_signature") final String btSignature, @RequestParam("bt_payload") final String btPayload) {
-        final WebhookNotification webhookNotification = gateway.webhookNotification().parse(btSignature, btPayload);
-        webhookNotification.getSubscription().getId();// subscription ID
 
-    }
 }
