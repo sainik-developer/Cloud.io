@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BrainTreeWebHookRequestDTO {
-    @JsonProperty("bt_signature")
-    private String btSignature;
-    @JsonProperty("bt_payload")
-    private String btPayload;
+    private String bt_signature;
+    private String bt_payload;
 }
