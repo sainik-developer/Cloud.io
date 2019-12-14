@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
@@ -21,9 +20,11 @@ public class TransactionDO {
     @Id
     private String id;
 
-    private String planId;
-    private String subscriptionId;
     private String accountId;
+
+    private String btPlanId;
+    private String btSubscriptionId;
+    private String btTransactionId;
     private BigDecimal amount;
     private String status;
     @CreatedDate

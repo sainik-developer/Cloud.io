@@ -2,6 +2,7 @@ package com.cloudio.rest.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -15,8 +16,29 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2WebFlux;
 @Configuration
 @EnableSwagger2WebFlux
 public class Swagger2SpringBootConfig {
+
     @Bean
+    @Profile("local")
     public Docket api() {
+        return new Docket(DocumentationType.SWAGGER_2)
+                .genericModelSubstitutes(Mono.class, Flux.class)
+                .useDefaultResponseMessages(false)
+//                .pathProvider(new DefaultPathProvider() {
+//                    @Override
+//                    public String getOperationPath(String operationPath) {
+//                        UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromPath("/cloudio");
+//                        return removeAdjacentForwardSlashes(uriComponentsBuilder.path(operationPath).build().toString());
+//                    }
+//                })
+                .select()
+                .apis(RequestHandlerSelectors.any())
+                .paths(PathSelectors.any())
+                .build();
+    }
+
+    @Bean
+    @Profile("sandbox")
+    public Docket apiDoc() {
         return new Docket(DocumentationType.SWAGGER_2)
                 .genericModelSubstitutes(Mono.class, Flux.class)
                 .useDefaultResponseMessages(false)

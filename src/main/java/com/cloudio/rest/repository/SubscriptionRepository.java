@@ -8,4 +8,6 @@ import reactor.core.publisher.Mono;
 @Repository
 public interface SubscriptionRepository extends ReactiveMongoRepository<SubscriptionDO, String> {
     Mono<SubscriptionDO> findByAccountId(final String accountId);
+
+    Mono<SubscriptionDO> findByBtSubscriptionId(final String subscriptionId);
 }

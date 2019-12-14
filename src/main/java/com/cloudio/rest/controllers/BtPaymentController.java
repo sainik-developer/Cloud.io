@@ -1,11 +1,8 @@
 package com.cloudio.rest.controllers;
 
-import com.braintreegateway.BraintreeGateway;
-import com.braintreegateway.WebhookNotification;
 import com.cloudio.rest.dto.PaymentClientTokenResponseDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.SubscriptionRequestDTO;
-import com.cloudio.rest.dto.TransactionDTO;
 import com.cloudio.rest.exception.BrainTreeTokenException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
