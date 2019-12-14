@@ -89,7 +89,7 @@ public class PaymentService {
         Result<Subscription> result = gateway.subscription().update(subscriptionDO.getBtSubscriptionId(), new SubscriptionRequest().paymentMethodNonce(nonse).planId(planId));
         if (result.isSuccess()) {
             log.debug("update is successful");
-            return result.getSubscription();
+            return result.getTarget();
         } else {
             log.error("update is failed");
             throw new SubscriptionException(result.getMessage());
@@ -101,7 +101,7 @@ public class PaymentService {
         Result<Subscription> result = gateway.subscription().create(new SubscriptionRequest().paymentMethodNonce(nonse).planId(planId));
         if (result.isSuccess()) {
             log.debug("create of subscription is successful");
-            return result.getSubscription();
+            return result.getTarget();
         } else {
             log.error("create of subscription is failed");
             throw new SubscriptionException(result.getMessage());
