@@ -64,8 +64,11 @@ public class PaymentService {
     }
 
     public Mono<String> subscribe(final String accountId, final SubscriptionRequestDTO subscriptionRequestDTO) {
+        log.debug("braintree subscription is called for accountId  {}", accountId);
         return accountRepository.findByAccountIdAndStatusAndType(accountId, AccountStatus.ACTIVE, AccountType.ADMIN)
+                .doOnNext(accountDo -> log.debug("accountId = {} found as ADMIN and ACTIVE", accountId))
                 .flatMap(accountDo -> subscriptionRepository.findByAccountId(accountId))
+                .doOnNext(subscriptionDo -> log.debug("subscription is found as {}", subscriptionDo))
                 .map(subscriptionDo -> Pair.of(subscriptionDo, updateBtSubscription(subscriptionDo, subscriptionRequestDTO.getNonse())))
                 .map(subscriptionPair -> {
                     subscriptionPair.getFirst().setStatus(subscriptionPair.getSecond().getStatus().toString());
@@ -82,21 +85,26 @@ public class PaymentService {
     }
 
     private Subscription updateBtSubscription(final SubscriptionDO subscriptionDO, final String nonse) {
+        log.debug("update subscription is called with details {}", subscriptionDO);
         Result<Subscription> result = gateway.subscription().update(subscriptionDO.getBtSubscriptionId(), new SubscriptionRequest().paymentMethodNonce(nonse).planId(planId));
         if (result.isSuccess()) {
+            log.debug("update is successful");
             return result.getSubscription();
         } else {
+            log.error("update is failed");
             throw new SubscriptionException(result.getMessage());
         }
     }
 
     private Subscription createBtSubscription(final String nonse) {
+        log.debug("create subscription is called with details");
         Result<Subscription> result = gateway.subscription().create(new SubscriptionRequest().paymentMethodNonce(nonse).planId(planId));
         if (result.isSuccess()) {
+            log.debug("create of subscription is successful");
             return result.getSubscription();
         } else {
+            log.error("create of subscription is failed");
             throw new SubscriptionException(result.getMessage());
         }
     }
-
 }
