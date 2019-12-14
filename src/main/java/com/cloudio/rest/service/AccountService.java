@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountService {
 
-    @Value("${cloud.io.payment.planId}")
+    @Value("${payment.bt.planId}")
     private String planId;
 
     private final AccountRepository accountRepository;
