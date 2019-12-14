@@ -33,7 +33,6 @@ public class Swagger2SpringBootConfig {
                 .build();
     }
 
-
     public static String removeAdjacentForwardSlashes(String candidate) {
         return candidate.replaceAll("(?<!(http:|https:))//", "/");
     }
