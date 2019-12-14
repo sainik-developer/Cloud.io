@@ -12,6 +12,7 @@ import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.mapper.TransactionMapper;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
+import com.cloudio.rest.pojo.BrainTreeDetail;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.SubscriptionRepository;
 import com.cloudio.rest.repository.TransactionRepository;
@@ -56,7 +57,7 @@ public class PaymentService {
                         .filter(Result::isSuccess)
                         .map(customerResult -> customerResult.getTarget().getId())
                         .map(brainTreeCustomerId -> {
-                            accountDO.getDetail().setCustomerId(brainTreeCustomerId);
+                            accountDO.setDetail(BrainTreeDetail.builder().planId(planId).customerId(brainTreeCustomerId).build());
                             return accountDO;
                         })
                         .flatMap(accountRepository::save));
