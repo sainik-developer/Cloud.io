@@ -31,7 +31,6 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
-    private final PaymentService paymentService;
 
     public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return Mono.zip(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
@@ -45,7 +44,7 @@ public class AccountService {
                 }))
                 .flatMap(accountRepository::save)
                 .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
-                .flatMap(paymentService::createCustomerInVault)
+//                .flatMap(paymentService::createCustomerInVault)
                 .map(AccountMapper.INSTANCE::toDTO);
     }
 
