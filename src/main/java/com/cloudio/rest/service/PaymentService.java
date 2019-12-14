@@ -50,7 +50,7 @@ public class PaymentService {
 
     public Mono<AccountDO> createCustomerInVault(final AccountDO accountDO) {
         return Mono.just(accountDO)
-                .filter(accountDo -> !Objects.isNull(accountDo.getDetail().getCustomerId()))
+                .filter(accountDo -> Objects.isNull(accountDo.getDetail()))
                 .switchIfEmpty(Mono.just(new CustomerRequest().firstName(accountDO.getFirstName()).lastName(accountDO.getLastName()).phone(accountDO.getPhoneNumber()))
                         .map(gateway.customer()::create)
                         .filter(Result::isSuccess)
