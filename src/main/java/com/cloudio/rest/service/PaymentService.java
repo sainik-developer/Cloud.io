@@ -91,7 +91,7 @@ public class PaymentService {
             log.debug("update is successful");
             return result.getTarget();
         } else {
-            log.error("update is failed");
+            log.error("update is failed reason = {}", result.getMessage());
             throw new SubscriptionException(result.getMessage());
         }
     }
@@ -103,7 +103,7 @@ public class PaymentService {
             log.debug("create of subscription is successful");
             return result.getTarget();
         } else {
-            log.error("create of subscription is failed");
+            log.error("create of subscription is failed. reason  = {}", result.getMessage());
             throw new SubscriptionException(result.getMessage());
         }
     }
