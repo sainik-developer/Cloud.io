@@ -29,7 +29,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class PaymentService {
 
-    @Value("${cloud.io.payment.planId}")
+    @Value("${payment.bt.planId}")
     private String planId;
 
     private final BraintreeGateway gateway;

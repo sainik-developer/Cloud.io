@@ -9,16 +9,16 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class BraintreeConfig {
 
-    @Value("${cloud.io.payment.environment}")
+    @Value("${payment.bt.environment}")
     private String ENVIRONMENT;
 
-    @Value("${cloud.io.payment.merchantId}")
+    @Value("${payment.bt.merchantId}")
     private String MERCHANT_ID;
 
-    @Value("${cloud.io.payment.publicKey}")
+    @Value("${payment.bt.publicKey}")
     private String PUBLIC_KEY;
 
-    @Value("${cloud.io.payment.privateKey}")
+    @Value("${payment.bt.privateKey}")
     private String PRIVATE_KEY;
 
     @Bean
