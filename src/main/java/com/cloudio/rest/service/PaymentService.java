@@ -39,7 +39,7 @@ public class PaymentService {
 
     public Mono<PaymentClientTokenResponseDTO> getClientToken(final AccountDO accountDO) {
         return Mono.just(accountDO)
-                .filter(accountDo -> StringUtils.isNullOrEmpty(accountDo.getFirstName()) && StringUtils.isNullOrEmpty(accountDo.getLastName()))
+                .filter(accountDo -> !StringUtils.isNullOrEmpty(accountDo.getFirstName()) && !StringUtils.isNullOrEmpty(accountDo.getLastName()))
                 .flatMap(this::createCustomerInVault)
                 .map(accountDo -> new ClientTokenRequest().customerId(accountDO.getDetail().getCustomerId()))
                 .map(clientTokenRequest -> PaymentClientTokenResponseDTO
