@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotEmpty;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -23,6 +25,7 @@ public class AccountDTO {
     private String companyId;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String phoneNumber;
+    @NotEmpty
     private String firstName;
     private String lastName;
     private String jobTitle;

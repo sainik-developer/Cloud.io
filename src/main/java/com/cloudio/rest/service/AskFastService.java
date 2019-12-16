@@ -103,12 +103,12 @@ public class AskFastService {
                         "Welcome1$", memberAccountDO.getFirstName() + memberAccountDO.getLastName(),
                         memberAccountDO.getPhoneNumber(), memberAccountDO.getPhoneNumber() + "-" + companyName + "@cloud.io"), companyAdminAuthToken)
                         .doOnError(throwable -> log.error("Creating sub account failed due to " + throwable.getMessage()))
-                        .doOnNext(subAccountId -> log.info("Creating sub account is successful and sub account id for member is {}", subAccountId))
+                        .doOnNext(subAccountId -> log.debug("Creating sub account is successful and sub account id for member is {}", subAccountId))
                         .flatMap(subAccountId -> impersonateSubAccount(adminAccountDO.getAskfastDetail().getAccountId(), adminAccountDO.getAskfastDetail().getRefreshToken(), subAccountId, companyAdminAuthToken))
                         .doOnError(throwable -> log.error("impersonate account failed{}", throwable.getMessage()))
                         .doOnNext(subAccountAuthToken -> log.info("impersonate account successful, where token is {}", subAccountAuthToken)))
-                .doOnNext(subAccountAuthToken -> log.info("sub account is created for member and auth token  is {}", subAccountAuthToken))
-                .doOnNext(subAccountAuthToken -> log.info("going to retrieve accoutId and refresh token of member account with auth token {}", subAccountAuthToken))
+                .doOnNext(subAccountAuthToken -> log.debug("sub account is created for member and auth token  is {}", subAccountAuthToken))
+                .doOnNext(subAccountAuthToken -> log.debug("going to retrieve accoutId and refresh token of member account with auth token {}", subAccountAuthToken))
                 .flatMap(this::retrieveAskFastCredentialByAuthToken)
                 .doOnNext(askfastDetail -> log.info("Retrieving the ask fast details completed successfully {}", askfastDetail))
                 .switchIfEmpty(Mono.error(new RuntimeException()));

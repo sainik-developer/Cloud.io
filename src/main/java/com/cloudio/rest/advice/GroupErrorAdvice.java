@@ -65,6 +65,12 @@ public class GroupErrorAdvice {
         return new ResponseDTO(null, "Company name already in use", null);
     }
 
+    @ExceptionHandler(value = SubscriptionException.class)
+    @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
+    public ResponseDTO invalidNonceException(final Exception e) {
+        return new ResponseDTO(HttpStatus.EXPECTATION_FAILED.value(), e.getMessage(), null);
+    }
+
     @ExceptionHandler({MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> yourExceptionHandler(MethodArgumentNotValidException e) {
