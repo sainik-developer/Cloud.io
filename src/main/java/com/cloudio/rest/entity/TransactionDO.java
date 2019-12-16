@@ -21,7 +21,6 @@ public class TransactionDO {
     private String id;
 
     private String accountId;
-
     private String btPlanId;
     private String btSubscriptionId;
     private String btTransactionId;

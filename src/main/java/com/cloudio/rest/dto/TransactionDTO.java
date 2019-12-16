@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,8 +15,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TransactionDTO {
-    @NotBlank(message = "nonse can't be null")
-    private String nonse;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String planId;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

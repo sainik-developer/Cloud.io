@@ -7,6 +7,4 @@ public class BrainTreeTokenException extends RuntimeException {
     public BrainTreeTokenException(final String message) {
         super(message);
     }
-
-
 }

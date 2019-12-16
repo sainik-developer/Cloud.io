@@ -14,5 +14,4 @@ import javax.validation.constraints.NotBlank;
 public class SubscriptionRequestDTO {
     @NotBlank(message = "nonse can't be null")
     private String nonse;
-
 }
