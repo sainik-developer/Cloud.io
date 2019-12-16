@@ -58,7 +58,8 @@ public class CompanyController {
                 .map(CompanyMapper.INSTANCE::fromDTO)
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
-                .doOnNext(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null).subscribe())
+                .flatMap(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null)
+                        .map(accountDto -> companyDto))
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 }

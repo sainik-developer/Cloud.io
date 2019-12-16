@@ -4,6 +4,7 @@ import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.AskfastDetail;
 import com.cloudio.rest.pojo.BrainTreeDetail;
+import com.cloudio.rest.pojo.BrainTreeDetail;
 import io.github.classgraph.json.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
