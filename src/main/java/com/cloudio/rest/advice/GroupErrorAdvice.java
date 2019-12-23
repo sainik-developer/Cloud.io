@@ -62,13 +62,19 @@ public class GroupErrorAdvice {
     @ExceptionHandler(value = CompanyNameNotUniqueException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ResponseDTO companyNameNotUniqueException(final Exception e) {
-        return new ResponseDTO(null, "Company name already in use", null);
+        return new ResponseDTO(HttpStatus.CONFLICT.value(), "Company name already in use", null);
     }
 
     @ExceptionHandler(value = SubscriptionException.class)
     @ResponseStatus(HttpStatus.EXPECTATION_FAILED)
     public ResponseDTO invalidNonceException(final Exception e) {
         return new ResponseDTO(HttpStatus.EXPECTATION_FAILED.value(), e.getMessage(), null);
+    }
+
+    @ExceptionHandler(value = BrainTreeTokenException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseDTO brainTreeTokenException(final Exception e) {
+        return new ResponseDTO(HttpStatus.BAD_REQUEST.value(), "", null);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})

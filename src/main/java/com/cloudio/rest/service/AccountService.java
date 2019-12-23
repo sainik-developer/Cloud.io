@@ -44,7 +44,6 @@ public class AccountService {
                 }))
                 .flatMap(accountRepository::save)
                 .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
-//                .flatMap(paymentService::createCustomerInVault)
                 .map(AccountMapper.INSTANCE::toDTO);
     }
 

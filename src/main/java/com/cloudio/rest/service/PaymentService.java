@@ -6,6 +6,7 @@ import com.cloudio.rest.dto.PaymentClientTokenResponseDTO;
 import com.cloudio.rest.dto.SubscriptionRequestDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.entity.SubscriptionDO;
+import com.cloudio.rest.exception.BrainTreeTokenException;
 import com.cloudio.rest.exception.SubscriptionException;
 import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.pojo.AccountStatus;
@@ -13,7 +14,6 @@ import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.SubscriptionRepository;
-import com.cloudio.rest.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,7 +32,6 @@ public class PaymentService {
     private String planId;
 
     private final BraintreeGateway gateway;
-    private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final SubscriptionRepository subscriptionRepository;
 
@@ -40,11 +39,15 @@ public class PaymentService {
         return Mono.just(accountDO)
                 .filter(accountDo -> !StringUtils.isNullOrEmpty(accountDo.getFirstName()) && !StringUtils.isNullOrEmpty(accountDo.getLastName()))
                 .flatMap(this::createCustomerInVault)
-                .map(accountDo -> new ClientTokenRequest().customerId(accountDO.getDetail().getCustomerId()))
-                .map(clientTokenRequest -> PaymentClientTokenResponseDTO
-                        .builder()
-                        .token(gateway.clientToken().generate(clientTokenRequest))
-                        .build());
+                .map(accountDo -> PaymentClientTokenResponseDTO.builder().token(generateClientToken(accountDo.getDetail().getCustomerId())).build());
+    }
+
+    private String generateClientToken(final String btCustomerId) {
+        try {
+            return gateway.clientToken().generate(new ClientTokenRequest().customerId(btCustomerId));
+        } catch (RuntimeException e) {
+            throw new BrainTreeTokenException("client token generation error due to " + e.getMessage());
+        }
     }
 
     public Mono<AccountDO> createCustomerInVault(final AccountDO accountDO) {
@@ -58,7 +61,8 @@ public class PaymentService {
                             accountDO.setDetail(BrainTreeDetail.builder().planId(planId).customerId(brainTreeCustomerId).build());
                             return accountDO;
                         })
-                        .flatMap(accountRepository::save));
+                        .flatMap(accountRepository::save)
+                        .switchIfEmpty(Mono.error(new BrainTreeTokenException("vault entry failed for customer with details" + accountDO.toString()))));
     }
 
     public Mono<String> subscribe(final String accountId, final SubscriptionRequestDTO subscriptionRequestDTO) {
