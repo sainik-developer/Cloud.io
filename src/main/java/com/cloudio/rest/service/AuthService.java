@@ -129,7 +129,7 @@ public class AuthService {
                                 .flatMap(accountDO -> {
                                     log.info("Account is already registered, so will get access token for phone number {}", authToken.getPhoneNumber());
                                     return getAccessToken(accountDO.getAccountId())
-                                            .map(s -> LoginResponseDTO.builder().authorization(s).accountId(accountDO.getAskfastDetail().getAccountId()).refreshToken(accountDO.getAskfastDetail().getRefreshToken()).build());
+                                            .map(s -> LoginResponseDTO.builder().authorization(s).build());
                                 }).switchIfEmpty(Mono.error(new SuspiciousStateException()))));
     }
 

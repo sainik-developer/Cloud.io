@@ -18,7 +18,7 @@ public interface AccountRepository extends ReactiveMongoRepository<AccountDO, St
 
     Mono<AccountDO> findByAccountIdAndStatusAndType(final String accountId, final AccountStatus status, final AccountType type);
 
-    Mono<AccountDO> findByAccountIdAndCompanyIdAndType(final String accountId, final String companyId, final AccountType accountType);
+    Mono<AccountDO> findByAccountIdAndCompanyIdAndTypeAndStatus(final String accountId, final String companyId, final AccountType accountType,final AccountStatus status);
 
     Mono<AccountDO> findByCompanyIdAndType(final String companyId, final AccountType type);
 }
