@@ -40,6 +40,5 @@ public class AccountDO {
     private String firebaseAuthToken;
     private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
-    private AskfastDetail askfastDetail;
 
 }

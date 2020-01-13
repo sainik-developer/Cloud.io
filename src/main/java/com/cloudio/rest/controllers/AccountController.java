@@ -9,12 +9,15 @@ import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
+import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -22,6 +25,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+@Api
 @Log4j2
 @RestController
 @RequestMapping("/account")
@@ -29,6 +33,7 @@ import java.util.List;
 public class AccountController {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
+    private final AWSS3Services awss3Services;
 
     @ApiResponses(value = {
             @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is fetched"),
@@ -71,7 +76,7 @@ public class AccountController {
                                   @PathVariable("companyId") final String companyId,
                                   @Validated @RequestBody List<InviteAccountDTO> inviteAccountDtos) {
         log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);
-        return accountRepository.findByAccountIdAndCompanyIdAndType(accountId, companyId, AccountType.ADMIN)
+        return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId))
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
@@ -81,4 +86,26 @@ public class AccountController {
                         inviteAccountDto.getLastName()))
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
+
+
+    @PostMapping("/avatar")
+    public Mono<AccountDTO> uploadProfileImage(@RequestHeader("accountId") final String accountId,
+                                               @RequestPart(value = "image") Mono<FilePart> file) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(accountDo -> {
+                    if (accountDo.getProfileUrl() != null) {
+                        awss3Services.deleteFilesInS3(accountDo.getProfileUrl().substring(accountDo.getProfileUrl().lastIndexOf("/") + 1));
+                    }
+                    return accountDo;
+                })
+                .flatMap(accountDo -> awss3Services.uploadFileInS3(file)
+                        .map(imageUrl -> {
+                            accountDo.setProfileUrl(imageUrl);
+                            return accountDo;
+                        }))
+                .flatMap(accountRepository::save)
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+    }
+
 }

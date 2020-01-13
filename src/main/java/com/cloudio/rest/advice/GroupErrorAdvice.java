@@ -17,6 +17,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GroupErrorAdvice {
 
+    @ExceptionHandler(value = NotAuthorizedToUpdateCompanyProfileException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseDTO notAuthorizedToUpdateCompanyProfileException(final Exception e) {
+        return new ResponseDTO(null, "User is not admin or no more active to update the company profile", null);
+    }
+
+
     @ExceptionHandler(value = SignInException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseDTO signInException(final Exception e) {

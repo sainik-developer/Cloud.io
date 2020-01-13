@@ -1,6 +1,5 @@
 package com.cloudio.rest.controllers;
 
-import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.LoginResponseDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.VerifyResponseDTO;
@@ -15,6 +14,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+//@Api
 @Log4j2
 @RestController
 @RequestMapping("/auth")
@@ -35,7 +35,7 @@ public class AuthController {
 
     @ApiResponses(value = {
             @ApiResponse(code = 200, response = VerifyResponseDTO.class, responseContainer = "List", message = "Account is updated successfully"),
-            @ApiResponse(code = 401, response = String.class, message = "Phone number is not found or code is not matched")
+            @ApiResponse(code = 401, response = ResponseDTO.class, message = "Phone number is not found or code is not matched")
     })
     @PostMapping("/verify/{phoneNumber}/{code}")
     public Mono<VerifyResponseDTO> verify(@PathVariable("phoneNumber") final String phoneNumber,
@@ -57,8 +57,8 @@ public class AuthController {
     }
 
     @ApiResponses(value = {
-            @ApiResponse(code = 200, response = String.class, message = "Authorization as header containing token"),
-            @ApiResponse(code = 401, response = String.class, message = "Phone number is not found or code is not matched")
+            @ApiResponse(code = 200, response = LoginResponseDTO.class, message = "Authorization as header containing token"),
+            @ApiResponse(code = 401, response = ResponseDTO.class, message = "Phone number is not found or code is not matched")
 
     })
     @PostMapping("/login/{companyId}")
@@ -70,8 +70,8 @@ public class AuthController {
     }
 
     @ApiResponses(value = {
-            @ApiResponse(code = 200, response = CompanyDTO.class, message = "Logged out successfully"),
-            @ApiResponse(code = 406, response = CompanyDTO.class, message = "invalid token")
+            @ApiResponse(code = 200, response = String.class, message = "Logged out successfully"),
+            @ApiResponse(code = 406, response = ResponseDTO.class, message = "invalid token")
     })
     @PostMapping("/logout")
     public Mono<String> logout(@RequestHeader("Authorization") final String token) {

@@ -4,24 +4,31 @@ import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
+import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.CompanyMapper;
+import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.CompanyStatus;
+import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
+import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.AuthService;
 import com.cloudio.rest.service.CompanyService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+@Api
 @Log4j2
 @RestController
 @RequestMapping("/company")
@@ -32,6 +39,9 @@ public class CompanyController {
     private final CompanyRepository companyRepository;
     private final AccountService accountService;
     private final CompanyService companyService;
+    private final AccountRepository accountRepository;
+    private final AWSS3Services awss3Services;
+
 
     @ApiResponses(value = {
             @ApiResponse(code = 201, response = CompanyDTO.class, message = "Company is created by admin"),
@@ -62,4 +72,28 @@ public class CompanyController {
                         .map(accountDto -> companyDto))
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
+
+
+    @PostMapping("/avatar")
+    public Mono<CompanyDTO> uploadProfileImage(@RequestHeader("accountId") final String accountId, @RequestParam("companyId") final String companyId,
+                                               @RequestPart(value = "image") Mono<FilePart> file) {
+        return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
+                .flatMap(accountDo -> companyRepository.findByCompanyId(companyId))
+                .map(companyDo -> {
+                    if (companyDo.getCompanyAvatarUrl() != null) {
+                        awss3Services.deleteFilesInS3(companyDo.getCompanyAvatarUrl().substring(companyDo.getCompanyAvatarUrl().lastIndexOf("/") + 1));
+                    }
+                    return companyDo;
+                })
+                .flatMap(companyDo -> awss3Services.uploadFileInS3(file)
+                        .map(imageUrl -> {
+                            companyDo.setCompanyAvatarUrl(imageUrl);
+                            return companyDo;
+                        }))
+                .flatMap(companyRepository::save)
+                .map(CompanyMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(new NotAuthorizedToUpdateCompanyProfileException()));
+    }
+
+
 }

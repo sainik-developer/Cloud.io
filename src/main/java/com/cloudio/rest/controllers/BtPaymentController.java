@@ -8,6 +8,7 @@ import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.service.PaymentService;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+@Api
 @Log4j2
 @RestController
 @RequestMapping("/payment")
@@ -24,6 +26,7 @@ public class BtPaymentController {
 
     private final PaymentService paymentService;
     private final AccountRepository accountRepository;
+
 
     @ApiResponses(value = {
             @ApiResponse(code = 200, response = PaymentClientTokenResponseDTO.class, message = "Bt client token is fetched successfully"),
