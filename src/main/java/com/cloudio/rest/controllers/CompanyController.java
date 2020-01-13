@@ -1,7 +1,6 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.CompanyDTO;
-import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
@@ -15,9 +14,6 @@ import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.AuthService;
 import com.cloudio.rest.service.CompanyService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -28,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
-@Api
 @Log4j2
 @RestController
 @RequestMapping("/company")
@@ -43,10 +38,6 @@ public class CompanyController {
     private final AWSS3Services awss3Services;
 
 
-    @ApiResponses(value = {
-            @ApiResponse(code = 201, response = CompanyDTO.class, message = "Company is created by admin"),
-            @ApiResponse(code = 401, response = ResponseDTO.class, message = "Temp token is invalid hence company could not be created")
-    })
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
     public Mono<CompanyDTO> createCompany(@Validated @RequestBody CompanyDTO companyDTO,

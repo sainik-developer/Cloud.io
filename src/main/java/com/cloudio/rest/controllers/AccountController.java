@@ -2,7 +2,6 @@ package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.AccountDTO;
 import com.cloudio.rest.dto.InviteAccountDTO;
-import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.UnautherizedToInviteException;
 import com.cloudio.rest.mapper.AccountMapper;
@@ -11,9 +10,6 @@ import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -25,7 +21,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-@Api
 @Log4j2
 @RestController
 @RequestMapping("/account")
@@ -35,10 +30,6 @@ public class AccountController {
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
 
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is fetched"),
-            @ApiResponse(code = 404, response = ResponseDTO.class, message = "No active account found"),
-    })
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
         log.info("account details to be fetched is {}", accountId);
@@ -48,11 +39,6 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
-    @ApiResponses(value = {
-            @ApiResponse(code = 200, response = AccountDTO.class, message = "Account is updated successfully"),
-            @ApiResponse(code = 404, response = ResponseDTO.class, message = "No active account found"),
-            @ApiResponse(code = 401, response = ResponseDTO.class, message = "user is unauthorized to access the system")
-    })
     @PatchMapping("/update")
     Mono<AccountDTO> updateAccount(@RequestHeader("accountId") final String accountId, @Validated @RequestBody AccountDTO accountDto) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
@@ -65,11 +51,6 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
-    @ApiResponses(value = {
-            @ApiResponse(code = 201, response = AccountDTO.class, responseContainer = "List", message = "The list of invited members"),
-            @ApiResponse(code = 417, response = ResponseDTO.class, message = "User does not have permission to invite someone"),
-            @ApiResponse(code = 401, response = ResponseDTO.class, message = "user is unauthorized to access the system")
-    })
     @PostMapping("/invite/{companyId}")
     @ResponseStatus(value = HttpStatus.CREATED)
     Flux<AccountDTO> inviteMember(@RequestHeader("accountId") final String accountId,
@@ -86,7 +67,6 @@ public class AccountController {
                         inviteAccountDto.getLastName()))
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
-
 
     @PostMapping("/avatar")
     public Mono<AccountDTO> uploadProfileImage(@RequestHeader("accountId") final String accountId,
@@ -107,5 +87,4 @@ public class AccountController {
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
-
 }

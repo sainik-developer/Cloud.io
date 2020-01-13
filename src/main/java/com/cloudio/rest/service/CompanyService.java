@@ -13,7 +13,6 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
 
-
     public Mono<Boolean> isCompanyNameUnique(final String companyName) {
         return companyRepository.findByName(companyName)
                 .map(companyDO -> Boolean.FALSE)
