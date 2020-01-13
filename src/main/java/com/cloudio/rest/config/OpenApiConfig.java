@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         ),
         servers = {
                 @Server(
-                        url = "http://prod-alb-511964033.eu-west-1.elb.amazonaws.com/qringGroups",
+                        url = "http://ec2-54-194-107-63.eu-west-1.compute.amazonaws.com/cloudio",
                         description = "sandbox Server"
                 )
         }
