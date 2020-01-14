@@ -65,8 +65,24 @@ public class CompanyController {
     }
 
 
-    @PostMapping("/avatar")
-    public Mono<CompanyDTO> uploadProfileImage(@RequestHeader("accountId") final String accountId, @RequestParam("companyId") final String companyId,
+    @PostMapping("/attache/avatar")
+    public Mono<CompanyDTO> addCompanyImage(@RequestHeader("temp-authorization-token") final String authorizationToken, @RequestParam("companyId") final String companyId,
+                                            @RequestPart(value = "image") Mono<FilePart> file) {
+        return authService.isValidToken(authorizationToken)
+                .flatMap(phoneNumber -> companyRepository.findByCompanyId(companyId))
+                .flatMap(companyDo -> awss3Services.uploadFileInS3(file)
+                        .map(imageUrl -> {
+                            companyDo.setCompanyAvatarUrl(imageUrl);
+                            return companyDo;
+                        }))
+                .flatMap(companyRepository::save)
+                .map(CompanyMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
+    }
+
+
+    @PostMapping("/update/avatar")
+    public Mono<CompanyDTO> updateCompanyImage(@RequestHeader("accountId") final String accountId, @RequestParam("companyId") final String companyId,
                                                @RequestPart(value = "image") Mono<FilePart> file) {
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
                 .flatMap(accountDo -> companyRepository.findByCompanyId(companyId))
