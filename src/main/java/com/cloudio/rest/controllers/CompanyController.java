@@ -1,6 +1,7 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.CompanyDTO;
+import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
@@ -37,7 +38,6 @@ public class CompanyController {
     private final AccountRepository accountRepository;
     private final AWSS3Services awss3Services;
 
-
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
     public Mono<CompanyDTO> createCompany(@Validated @RequestBody CompanyDTO companyDTO,
@@ -65,18 +65,12 @@ public class CompanyController {
     }
 
 
-    @PostMapping("/attache/avatar")
-    public Mono<CompanyDTO> addCompanyImage(@RequestHeader("temp-authorization-token") final String authorizationToken, @RequestParam("companyId") final String companyId,
-                                            @RequestPart(value = "image") Mono<FilePart> file) {
+    @PatchMapping("")
+    public Mono<ResponseDTO> addCompanyImage(@RequestHeader("temp-authorization-token") final String authorizationToken,
+                                             @RequestPart(value = "image") Mono<FilePart> file) {
         return authService.isValidToken(authorizationToken)
-                .flatMap(phoneNumber -> companyRepository.findByCompanyId(companyId))
-                .flatMap(companyDo -> awss3Services.uploadFileInS3(file)
-                        .map(imageUrl -> {
-                            companyDo.setCompanyAvatarUrl(imageUrl);
-                            return companyDo;
-                        }))
-                .flatMap(companyRepository::save)
-                .map(CompanyMapper.INSTANCE::toDTO)
+                .flatMap(companyDo -> awss3Services.uploadFileInS3(file))
+                .map(imageUrl -> ResponseDTO.builder().data(imageUrl).build())
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 
