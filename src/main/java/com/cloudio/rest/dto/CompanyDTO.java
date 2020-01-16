@@ -20,7 +20,6 @@ public class CompanyDTO {
     private String companyId;
     @NotBlank(message = "company name can't be null")
     private String name;
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String companyAvatarUrl;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private CompanyStatus companyStatus;
