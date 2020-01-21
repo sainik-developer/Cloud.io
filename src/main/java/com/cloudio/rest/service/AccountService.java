@@ -37,9 +37,12 @@ public class AccountService {
 //                    accountDOCompanyDOTuple.getT1().setAskfastDetail(askfastDetail);
 //                    return accountDOCompanyDOTuple.getT1();
 //                }))
-        return accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
-                .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
-                .map(AccountMapper.INSTANCE::toDTO);
+        return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
+                .doOnNext(accountDo -> log.info("Account is just found in db successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
+                        .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
+                        .map(AccountMapper.INSTANCE::toDTO));
     }
 
 //    private Mono<AskfastDetail> createAskfastAccount(final Tuple2<AccountDO, CompanyDO> tuple2) {

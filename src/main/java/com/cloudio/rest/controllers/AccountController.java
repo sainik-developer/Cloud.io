@@ -61,10 +61,7 @@ public class AccountController {
                 .doOnNext(accountDo -> log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId))
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
-                        inviteAccountDto.getPhoneNumber(),
-                        AccountType.MEMBER,
-                        inviteAccountDto.getFirstName(),
-                        inviteAccountDto.getLastName()))
+                        inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
 
