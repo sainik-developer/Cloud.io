@@ -101,20 +101,24 @@ public class AuthService {
     public Mono<Boolean> verify(final String phoneNumber, final String code) {
         log.info("verification start for phone number {} code is {}", phoneNumber, code);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
-                .doOnNext(signInDetailDo -> log.info("phone number found for verification {} and code in db is {}",
-                        signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
+                .doOnNext(signInDetailDo -> {
+                    log.info("phone number found for verification {} and code in db is {}",
+                            signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode());
+                })
                 .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code));
     }
 
-    public Mono<String> isValidToken(final String tempToken) {
+    public Mono<Boolean> isValidToken(final String tempToken) {
         final TempAuthToken authToken = decodeTempAuthToken(tempToken);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
-                .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()))
-                .map(SignInDetailDO::getPhoneNumber);
+                .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()));
+//                .map(SignInDetailDO::getPhoneNumber);
     }
 
     public String createTemporaryToken(final String phoneNumber, final String code) {
-        return Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
+        String temp = Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
+        log.info("cloud io verify entering with phone Number {} ", temp);
+        return temp;
     }
 
     public Mono<LoginResponseDTO> login(final String tempAuthTokenStr, final String companyId) {
