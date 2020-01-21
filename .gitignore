@@ -3,5 +3,4 @@ target/*
 .idea/*
 spring-sandbox-cloudio.log
 src/main/resources/application-local.properties
-/spring-sandbox-cloudio.log
-/spring-sandbox-cloudio.log.2019-12-13.0.gz
+/spring-sandbox-cloudio.log.*
