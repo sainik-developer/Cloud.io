@@ -24,6 +24,7 @@ public class CompanyDTO {
     private String companyAvatarUrl;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private CompanyStatus companyStatus;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String adapterNumber = "088-123 45 68";
     private List<GroupDTO> groups;
 }

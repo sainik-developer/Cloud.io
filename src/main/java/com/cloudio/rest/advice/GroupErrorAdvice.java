@@ -81,7 +81,7 @@ public class GroupErrorAdvice {
     @ExceptionHandler(value = BrainTreeTokenException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseDTO brainTreeTokenException(final Exception e) {
-        return new ResponseDTO(HttpStatus.BAD_REQUEST.value(), "", null);
+        return new ResponseDTO(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class})

@@ -21,8 +21,6 @@ import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-
 @Log4j2
 @Service
 @RequiredArgsConstructor
@@ -51,18 +49,16 @@ public class PaymentService {
     }
 
     public Mono<AccountDO> createCustomerInVault(final AccountDO accountDO) {
-        return Mono.just(accountDO)
-                .filter(accountDo -> !Objects.isNull(accountDo.getDetail()))
-                .switchIfEmpty(Mono.just(new CustomerRequest().firstName(accountDO.getFirstName()).lastName(accountDO.getLastName()).phone(accountDO.getPhoneNumber()))
-                        .map(gateway.customer()::create)
-                        .filter(Result::isSuccess)
-                        .map(customerResult -> customerResult.getTarget().getId())
-                        .map(brainTreeCustomerId -> {
-                            accountDO.setDetail(BrainTreeDetail.builder().planId(planId).customerId(brainTreeCustomerId).build());
-                            return accountDO;
-                        })
-                        .flatMap(accountRepository::save)
-                        .switchIfEmpty(Mono.error(new BrainTreeTokenException("vault entry failed for customer with details" + accountDO.toString()))));
+        return Mono.just(new CustomerRequest().firstName(accountDO.getFirstName()).lastName(accountDO.getLastName()).phone(accountDO.getPhoneNumber()))
+                .map(gateway.customer()::create)
+                .filter(Result::isSuccess)
+                .map(customerResult -> customerResult.getTarget().getId())
+                .map(brainTreeCustomerId -> {
+                    accountDO.setDetail(BrainTreeDetail.builder().planId(planId).customerId(brainTreeCustomerId).build());
+                    return accountDO;
+                })
+                .flatMap(accountRepository::save)
+                .switchIfEmpty(Mono.error(new BrainTreeTokenException("vault entry failed for customer with details" + accountDO.toString())));
     }
 
     public Mono<String> subscribe(final String accountId, final SubscriptionRequestDTO subscriptionRequestDTO) {
