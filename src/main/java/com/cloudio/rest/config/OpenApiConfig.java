@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
         ),
         servers = {
                 @Server(
-                        url = "http://ec2-54-194-107-63.eu-west-1.compute.amazonaws.com/cloudio",
+                        url = "http://localhost:9095/",
                         description = "sandbox Server"
                 )
         }
