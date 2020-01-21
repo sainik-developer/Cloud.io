@@ -28,7 +28,6 @@ public class AccountService {
     public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
 //        return
 //                Mono.zip()
-
 //                        .doOnNext(accountDO -> log.info("saved account where details is {}", accountDO)).doOnError(throwable -> log.error("account creation is failed due to {}", throwable.getMessage())),
 //                companyRepository.findByCompanyId(companyId).doOnNext(companyDO -> log.info("account's company is retrieved {}", companyDO)).doOnError(throwable -> log.error("company retrieval is failed due to {}", throwable.getMessage())))
 //                .doOnError(throwable -> log.error("error while zipping account create and company finding with reason {} ", throwable.getMessage()))
