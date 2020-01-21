@@ -19,16 +19,11 @@ import java.util.List;
 public class CompanyDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String companyId;
-
     @NotBlank(message = "company name can't be null")
     private String name;
-
     private String companyAvatarUrl;
-
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private CompanyStatus companyStatus;
-
     private String adapterNumber = "088-123 45 68";
-
     private List<GroupDTO> groups;
 }
