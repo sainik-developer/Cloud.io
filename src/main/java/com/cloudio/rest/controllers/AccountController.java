@@ -19,9 +19,12 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 @Log4j2
+@Validated
 @RestController
 @RequestMapping("/account")
 @RequiredArgsConstructor
@@ -55,16 +58,14 @@ public class AccountController {
     @ResponseStatus(value = HttpStatus.CREATED)
     Flux<AccountDTO> inviteMember(@RequestHeader("accountId") final String accountId,
                                   @PathVariable("companyId") final String companyId,
-                                  @Validated @RequestBody List<InviteAccountDTO> inviteAccountDtos) {
+                                  @NotEmpty(message = "atleast one member is required")
+                                  @RequestBody List<@Valid InviteAccountDTO> inviteAccountDtos) {
         log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId))
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
-                        inviteAccountDto.getPhoneNumber(),
-                        AccountType.MEMBER,
-                        inviteAccountDto.getFirstName(),
-                        inviteAccountDto.getLastName()))
+                        inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
 

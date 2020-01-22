@@ -40,8 +40,7 @@ public class AuthController {
                 .map(companyDtos -> VerifyResponseDTO.builder()
                         .companies(companyDtos)
                         .token(authService.createTemporaryToken(phoneNumber, code))
-                        .build()
-                )
+                        .build())
                 .doOnNext(listResponseEntity -> log.info("verify finished {}", phoneNumber))
                 .switchIfEmpty(Mono.error(new VerificationException("Phone number is not found or code is not matched")));
     }
