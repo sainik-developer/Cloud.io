@@ -112,13 +112,10 @@ public class AuthService {
         final TempAuthToken authToken = decodeTempAuthToken(tempToken);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
                 .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()));
-//                .map(SignInDetailDO::getPhoneNumber);
     }
 
     public String createTemporaryToken(final String phoneNumber, final String code) {
-        String temp = Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
-        log.info("cloud io verify entering with phone Number {} ", temp);
-        return temp;
+        return Base64.encodeBase64String((phoneNumber + "#" + code + "#" + LocalDateTime.now()).getBytes());
     }
 
     public Mono<LoginResponseDTO> login(final String tempAuthTokenStr, final String companyId) {

@@ -4,6 +4,7 @@ import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.GroupDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
+import com.cloudio.rest.exception.GroupNotFoundException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.CompanyMapper;
@@ -43,13 +44,13 @@ public class CompanyController {
     private final GroupRepository groupRepository;
 
 
-    @GetMapping("/{companyId}")
-    public Flux<GroupDTO> groups(@PathVariable("companyId") final String companyId, @RequestHeader("accountId") final String accountId) {
-
-        return accountRepository.findByCompanyIdAndAccountId(companyId,accountId)
+    @GetMapping("/group")
+    public Flux<GroupDTO> groups(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountId(accountId)
+                .doOnNext(accountDo -> log.info("Group is retrieving for {}", accountDo.getCompanyId()))
                 .flatMapMany(accountDo -> groupRepository.findByCompanyId(accountDo.getCompanyId()))
                 .map(GroupMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(RuntimeException::new));
+                .switchIfEmpty(Mono.error(new GroupNotFoundException("There is no group for given company id")));
     }
 
 
@@ -58,16 +59,8 @@ public class CompanyController {
     public Mono<CompanyDTO> createCompany(@Validated @RequestBody CompanyDTO companyDTO,
                                           @RequestHeader("temp-authorization-token") final String authorizationToken) {
         log.info("Company going to be created with {}", companyDTO);
-
-        /*
-        We will pass arguments to GroupDTO.class
-                    groupDTO.setCompanyId(companyDTO.getCompanyID());
-                    groupDTO.setGroupType();        //here we will store default value from GroupDO.class
-
-        */
-
         return authService.isValidToken(authorizationToken)
-                .flatMap(phoneNumber -> companyService.isCompanyNameUnique(companyDTO.getName()))
+                .flatMap(companyName -> companyService.isCompanyNameUnique(companyDTO.getName()))
                 .map(unique -> {
                     if (!unique) {
                         throw new CompanyNameNotUniqueException();
@@ -83,6 +76,7 @@ public class CompanyController {
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
                 .flatMap(companyDto -> groupService.createDefaultGroup(companyDto.getCompanyId())
+                        .doOnNext(groupDo -> log.info("Default group is created and details are {}", groupDo))
                         .map(GroupMapper.INSTANCE::toDTO)
                         .map(groupDto -> {
                             companyDto.setGroups(Collections.singletonList(groupDto));

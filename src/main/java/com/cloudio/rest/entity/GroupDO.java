@@ -19,9 +19,7 @@ public class GroupDO {
 
     @Id
     private String id;
-
     private String groupId;
     private String companyId;
-
     private GroupType groupType;
 }

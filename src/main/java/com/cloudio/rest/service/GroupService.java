@@ -17,13 +17,8 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
 
-    public Mono<GroupDO> getGroups(final String companyId) {
-        return Mono.empty();
-    }
-
     public Mono<GroupDO> createDefaultGroup(final String companyId) {
         return groupRepository.save(GroupDO.builder().companyId(companyId).groupId("CIO:GR:"+UUID.randomUUID().toString()).groupType(GroupType.DEFAULT).build());
-
     }
 
 }
