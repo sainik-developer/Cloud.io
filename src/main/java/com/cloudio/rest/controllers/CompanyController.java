@@ -3,8 +3,8 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.GroupDTO;
 import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
-import com.cloudio.rest.exception.GroupNotFoundException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.CompanyMapper;
@@ -50,7 +50,7 @@ public class CompanyController {
                 .doOnNext(accountDo -> log.info("Group is retrieving for {}", accountDo.getCompanyId()))
                 .flatMapMany(accountDo -> groupRepository.findByCompanyId(accountDo.getCompanyId()))
                 .map(GroupMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new GroupNotFoundException("There is no group for given company id")));
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
 
