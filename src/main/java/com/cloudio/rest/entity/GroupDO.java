@@ -16,9 +16,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupDO {
-
     @Id
     private String id;
+
     private String groupId;
     private String companyId;
     private GroupType groupType;

@@ -23,7 +23,6 @@ public class GroupErrorAdvice {
         return new ResponseDTO(null, "User is not admin or no more active to update the company profile", null);
     }
 
-
     @ExceptionHandler(value = SignInException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseDTO signInException(final Exception e) {
@@ -88,7 +87,6 @@ public class GroupErrorAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> yourExceptionHandler(MethodArgumentNotValidException e) {
         Map<String, String> errors = new HashMap<>();
-
         BindingResult bindingResult = e.getBindingResult();
         List<FieldError> fieldErrors = bindingResult.getFieldErrors();
         for (FieldError fieldError : fieldErrors) {

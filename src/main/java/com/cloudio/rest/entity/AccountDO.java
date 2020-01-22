@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccountDO {
-
     @Id
     private String id;
 
@@ -39,5 +38,4 @@ public class AccountDO {
     private String firebaseAuthToken;
     private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
-
 }
