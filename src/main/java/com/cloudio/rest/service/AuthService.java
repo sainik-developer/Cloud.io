@@ -66,8 +66,7 @@ public class AuthService {
                 .flatMap(signInDetailDo -> askFastService.doAuthAndSendSMS(signInDetailDo.getPhoneNumber(), "Your verification code is " + signInDetailDo.getSmsCode())
                         .filter(Boolean::booleanValue)
                         .map(aBoolean -> "Sms is sent where retry count is " + signInDetailDo.getRetry())
-                        .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime."))
-                )
+                        .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime.")))
                 .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(generateSMSCode()).build())
                         .doOnNext(signInDetailDo -> log.info("Number had arrived for first time to sign up {}", signInDetailDo.getPhoneNumber()))
                         .flatMap(signInCodeRepository::save)
@@ -101,16 +100,17 @@ public class AuthService {
     public Mono<Boolean> verify(final String phoneNumber, final String code) {
         log.info("verification start for phone number {} code is {}", phoneNumber, code);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(phoneNumber))
-                .doOnNext(signInDetailDo -> log.info("phone number found for verification {} and code in db is {}",
-                        signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode()))
+                .doOnNext(signInDetailDo -> {
+                    log.info("phone number found for verification {} and code in db is {}",
+                            signInDetailDo.getPhoneNumber(), signInDetailDo.getSmsCode());
+                })
                 .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(code));
     }
 
-    public Mono<String> isValidToken(final String tempToken) {
+    public Mono<Boolean> isValidToken(final String tempToken) {
         final TempAuthToken authToken = decodeTempAuthToken(tempToken);
         return signInCodeRepository.findByPhoneNumber(getFormattedNumber(authToken.getPhoneNumber()))
-                .filter(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()))
-                .map(SignInDetailDO::getPhoneNumber);
+                .map(signInDetailDO -> signInDetailDO.getSmsCode().equals(authToken.getCode()));
     }
 
     public String createTemporaryToken(final String phoneNumber, final String code) {

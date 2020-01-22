@@ -1,26 +1,25 @@
 package com.cloudio.rest.entity;
 
+
+import com.cloudio.rest.pojo.GroupType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.LocalDateTime;
 
 @Data
 @Builder
-@Document("accesstokens")
-@AllArgsConstructor
+@Document(value = "groups")
 @NoArgsConstructor
-public class AccessTokenDO {
+@AllArgsConstructor
+public class GroupDO {
     @Id
     private String id;
 
-    private String accountId;
-    private String token;
-    @LastModifiedDate
-    private LocalDateTime stamp;
+    private String groupId;
+    private String companyId;
+    private GroupType groupType;
 }
