@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -15,6 +17,13 @@ import lombok.NoArgsConstructor;
 public class LoginResponseDTO {
     @JsonProperty(value = "Authorization")
     private String authorization;
+/*
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private List<GroupDTO> groups;*/
+
     private String accountId;
     private String refreshToken;
+
+    //@JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    //    private List<GroupDTO> groups;
 }

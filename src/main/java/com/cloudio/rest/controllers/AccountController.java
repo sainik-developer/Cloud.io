@@ -37,7 +37,7 @@ public class AccountController {
     private final AWSS3Services awss3Services;
 
     private String countryCode;
-    private int len;
+    //private int len;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -75,17 +75,16 @@ public class AccountController {
                     {
                         Phonenumber.PhoneNumber numberProto = phoneUtil.parse(phone, "");
                         countryCode = "+"+numberProto.getCountryCode();              // phone must begin with '+'
-                        len=phone.length();
                     }
-                    catch (NumberParseException e) {System.err.println("NumberParseException was thrown: " + e.toString());}
+                    catch (NumberParseException e) {System.err.println("NumberParseException was thrown: " + e.toString());}    //this line never gonna execute
                 })
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto ->
                         {
                             String phoneNumber=inviteAccountDto.getPhoneNumber();
-                           if(phoneNumber.length()!=len)
-                                phoneNumber=countryCode+phoneNumber;
-                             return accountService.createAccount(companyId,phoneNumber,AccountType.MEMBER,inviteAccountDto.getFirstName(),inviteAccountDto.getLastName());
+                            if(!phoneNumber.contains("+"))
+                                    phoneNumber=countryCode+phoneNumber;
+                            return accountService.createAccount(companyId,phoneNumber,AccountType.MEMBER,inviteAccountDto.getFirstName(),inviteAccountDto.getLastName());
                         })
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
