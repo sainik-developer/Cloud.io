@@ -12,7 +12,6 @@ import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -25,6 +24,7 @@ import reactor.core.publisher.Mono;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Validated
@@ -35,9 +35,6 @@ public class AccountController {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
-
-    private String countryCode;
-    //private int len;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -68,24 +65,21 @@ public class AccountController {
                                   @RequestBody List<@Valid InviteAccountDTO> inviteAccountDtos) {
         log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
-                .doOnNext(accountDo -> {log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId);
-                    PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-                    String phone=accountDo.getPhoneNumber();
-                    try
-                    {
-                        Phonenumber.PhoneNumber numberProto = phoneUtil.parse(phone, "");
-                        countryCode = "+"+numberProto.getCountryCode();              // phone must begin with '+'
-                    }
-                    catch (NumberParseException e) {System.err.println("NumberParseException was thrown: " + e.toString());}    //this line never gonna execute
-                })
-                .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
-                .flatMap(inviteAccountDto ->
-                        {
-                            String phoneNumber=inviteAccountDto.getPhoneNumber();
-                            if(!phoneNumber.contains("+"))
-                                    phoneNumber=countryCode+phoneNumber;
-                            return accountService.createAccount(companyId,phoneNumber,AccountType.MEMBER,inviteAccountDto.getFirstName(),inviteAccountDto.getLastName());
-                        })
+                .doOnNext(accountDo -> log.info("accountId = {} is Admin for given companyId = {} found, hence going to invite members", accountId, companyId))
+                .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos.stream()
+                        .collect(Collectors.toMap(InviteAccountDTO::getPhoneNumber, inviteAccountDTO -> inviteAccountDTO))
+                        .values().stream().peek(inviteAccountDTO -> {
+                            try {
+                                inviteAccountDTO.setPhoneNumber(PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance()
+                                                .parse(inviteAccountDTO.getPhoneNumber(), accountDo.getRegionCodeForCountryCode()),
+                                        PhoneNumberUtil.PhoneNumberFormat.E164));
+                            } catch (final NumberParseException e) {
+                                log.error("error while formatting phone number with country code");
+                            }
+                        }).collect(Collectors.toList())))
+                .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
+                        inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
+                .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
 
