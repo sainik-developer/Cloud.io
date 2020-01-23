@@ -29,5 +29,4 @@ public class CompanyDO {
     private LocalDateTime created;
     @LastModifiedDate
     private LocalDateTime updated;
-
 }

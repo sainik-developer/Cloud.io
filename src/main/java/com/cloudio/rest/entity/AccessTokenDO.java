@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AccessTokenDO {
-
     @Id
     private String id;
 
@@ -24,5 +23,4 @@ public class AccessTokenDO {
     private String token;
     @LastModifiedDate
     private LocalDateTime stamp;
-
 }
