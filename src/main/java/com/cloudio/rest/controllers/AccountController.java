@@ -10,6 +10,9 @@ import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -29,6 +32,9 @@ public class AccountController {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
+
+    private String countryCode;
+    private int len;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -58,13 +64,25 @@ public class AccountController {
                                   @Validated @RequestBody List<InviteAccountDTO> inviteAccountDtos) {
         log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
-                .doOnNext(accountDo -> log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId))
+                .doOnNext(accountDo -> {log.info("accountid = {} is Admin for given companyid = {} found, hence going to invite members", accountId, companyId);
+                    PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
+                    String phone=accountDo.getPhoneNumber();
+                    try
+                    {
+                        Phonenumber.PhoneNumber numberProto = phoneUtil.parse(phone, "");
+                        countryCode = "+"+numberProto.getCountryCode();              // phone must begin with '+'
+                        len=phone.length();
+                    }
+                    catch (NumberParseException e) {System.err.println("NumberParseException was thrown: " + e.toString());}
+                })
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
-                .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
-                        inviteAccountDto.getPhoneNumber(),
-                        AccountType.MEMBER,
-                        inviteAccountDto.getFirstName(),
-                        inviteAccountDto.getLastName()))
+                .flatMap(inviteAccountDto ->
+                        {
+                            String phoneNumber=inviteAccountDto.getPhoneNumber();
+                           if(phoneNumber.length()!=len)
+                                phoneNumber=countryCode+phoneNumber;
+                             return accountService.createAccount(companyId,phoneNumber,AccountType.MEMBER,inviteAccountDto.getFirstName(),inviteAccountDto.getLastName());
+                        })
                 .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
     }
 
