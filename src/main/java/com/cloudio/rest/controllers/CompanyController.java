@@ -1,14 +1,18 @@
 package com.cloudio.rest.controllers;
 
+import com.cloudio.rest.dto.AccountDTO;
 import com.cloudio.rest.dto.CompanyDTO;
 import com.cloudio.rest.dto.GroupDTO;
 import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
 import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
+import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.mapper.GroupMapper;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.CompanyStatus;
@@ -43,7 +47,6 @@ public class CompanyController {
     private final GroupService groupService;
     private final GroupRepository groupRepository;
 
-
     @GetMapping("/group")
     public Flux<GroupDTO> groups(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountId(accountId)
@@ -52,7 +55,6 @@ public class CompanyController {
                 .map(GroupMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
-
 
     @PostMapping("")
     @ResponseStatus(value = HttpStatus.CREATED)
@@ -88,7 +90,6 @@ public class CompanyController {
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 
-
     @PatchMapping("")
     public Mono<ResponseDTO> addCompanyImage(@RequestHeader("temp-authorization-token") final String authorizationToken,
                                              @RequestPart(value = "image") Mono<FilePart> file) {
@@ -97,7 +98,6 @@ public class CompanyController {
                 .map(imageUrl -> ResponseDTO.builder().data(imageUrl).build())
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
-
 
     @PostMapping("/update/avatar")
     public Mono<CompanyDTO> updateCompanyImage(@RequestHeader("accountId") final String accountId, @RequestParam("companyId") final String companyId,
@@ -120,4 +120,25 @@ public class CompanyController {
                 .switchIfEmpty(Mono.error(new NotAuthorizedToUpdateCompanyProfileException()));
     }
 
+    @DeleteMapping("/delete/avatar")
+    public Mono<CompanyDTO> deleteCompanyImage(@RequestHeader("accountId") final String accountId, @RequestParam("companyId") final String companyId) {
+        log.info("delete avatar is called for accountId {} for companyId {}", accountId, companyId);
+        return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
+                .flatMap(accountDo -> companyRepository.deleteProfileUrlByAccountId(companyId))
+                .map(companyDo -> {
+                    companyDo.setCompanyAvatarUrl(null);
+                    return companyDo;
+                })
+                .map(CompanyMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(NotAuthorizedToUpdateCompanyProfileException::new));
+    }
+
+    @GetMapping("/members")
+    public Flux<AccountDTO> getAllMembersByCompany(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state", defaultValue = "", required = false) final String state) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(AccountDO::getCompanyId)
+                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyId(companyId))
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+    }
 }

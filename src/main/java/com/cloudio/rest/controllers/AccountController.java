@@ -1,15 +1,20 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.AccountDTO;
+import com.cloudio.rest.dto.FirebaseRefreshTokenDTO;
 import com.cloudio.rest.dto.InviteAccountDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.exception.AccountProfileImageNotFoundException;
+import com.cloudio.rest.exception.FirebaseException;
 import com.cloudio.rest.exception.UnautherizedToInviteException;
 import com.cloudio.rest.mapper.AccountMapper;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
+import com.cloudio.rest.service.FirebaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,7 @@ import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 import java.util.List;
 
 @Log4j2
@@ -32,6 +38,7 @@ public class AccountController {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
+    private final FirebaseService firebaseService;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -43,7 +50,7 @@ public class AccountController {
     }
 
     @PatchMapping("/update")
-    Mono<AccountDTO> updateAccount(@RequestHeader("accountId") final String accountId, @Validated @RequestBody AccountDTO accountDto) {
+    Mono<AccountDTO> updateAccount(@RequestHeader("accountId") final String accountId, @RequestBody AccountDTO accountDto) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(accountDo -> {
                     AccountMapper.INSTANCE.update(accountDo, accountDto);
@@ -51,7 +58,7 @@ public class AccountController {
                 })
                 .flatMap(accountRepository::save)
                 .map(AccountMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
     @PostMapping("/invite/{companyId}")
@@ -66,7 +73,7 @@ public class AccountController {
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
                         inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
-                .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
+                .switchIfEmpty(Mono.error(UnautherizedToInviteException::new));
     }
 
     @PostMapping("/avatar")
@@ -86,6 +93,42 @@ public class AccountController {
                         }))
                 .flatMap(accountRepository::save)
                 .map(AccountMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
+    }
+
+    @DeleteMapping("/avatar")
+    public Mono<AccountDTO> deleteProfileImage(@RequestHeader("accountId") final String accountId) {
+        log.info("delete avatar is called for accountId {}", accountId);
+        return accountRepository.deleteProfileUrlByAccountId(accountId, AccountStatus.ACTIVE)
+                .doOnNext(accountDo -> awss3Services.deleteFilesInS3(accountDo.getProfileUrl().substring(accountDo.getProfileUrl().lastIndexOf("/") + 1)))
+                .map(accountDo -> {
+                    accountDo.setProfileUrl(null);
+                    return accountDo;
+                })
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(AccountProfileImageNotFoundException::new));
+    }
+
+    @PostMapping("/state")
+    public Mono<AccountDTO> setState(@RequestHeader("accountId") final String accountId,
+                                     @RequestParam(value = "state") @Pattern(regexp = "ONLINE|OFFLINE") final String state) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .flatMap(accountD -> accountRepository.updateByAccountId(accountId, AccountStatus.ACTIVE, AccountState.valueOf(state)))
+                .map(AccountMapper.INSTANCE::toDTO);
+    }
+
+    @GetMapping("/refreshFirebaseToken")
+    public Mono<FirebaseRefreshTokenDTO> refreshFirebaseTokne(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(accountDo -> firebaseService.refreshFireBaseCustomToken(accountDo.getAccountId()))
+                .map(s -> FirebaseRefreshTokenDTO.builder().customToken(s).build())
+                .switchIfEmpty(Mono.error(FirebaseException::new));
+    }
+
+    @DeleteMapping("/revokeFirebaseToken")
+    public Mono<Boolean> revokeFirebaseToken(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(accountDo -> firebaseService.revokeFireBaseCustomToken(accountDo.getAccountId()))
+                .switchIfEmpty(Mono.error(FirebaseException::new));
     }
 }

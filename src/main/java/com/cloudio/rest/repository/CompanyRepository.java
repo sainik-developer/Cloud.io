@@ -6,11 +6,9 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface CompanyRepository extends ReactiveMongoRepository<CompanyDO, String> {
+public interface CompanyRepository extends ReactiveMongoRepository<CompanyDO, String>, CustomCompanyRepository {
 
     Mono<CompanyDO> findByCompanyId(final String companyId);
 
     Mono<CompanyDO> findByName(final String name);
-
-
 }
