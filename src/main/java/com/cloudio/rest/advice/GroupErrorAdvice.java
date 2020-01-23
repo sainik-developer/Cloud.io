@@ -101,4 +101,9 @@ public class GroupErrorAdvice {
         return new ResponseDTO(1032, "This operation is not possible", null);
     }
 
+    @ExceptionHandler(value = FirebaseException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO firebaseException(final Exception e) {
+        return new ResponseDTO(1032, "This operation is not possible", null);
+    }
 }

@@ -137,7 +137,7 @@ public class CompanyController {
     public Flux<AccountDTO> getAllMembersByCompany(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state", defaultValue = "", required = false) final String state) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getCompanyId)
-                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndState(companyId, AccountState.valueOf(state)) : accountRepository.findByCompanyId(companyId))
+                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyId(companyId))
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
