@@ -1,6 +1,5 @@
 package com.cloudio.rest.entity;
 
-
 import com.cloudio.rest.pojo.GroupType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.List;
 
 @Data
 @Builder
@@ -22,4 +22,5 @@ public class GroupDO {
     private String groupId;
     private String companyId;
     private GroupType groupType;
+    private List<String> members;
 }

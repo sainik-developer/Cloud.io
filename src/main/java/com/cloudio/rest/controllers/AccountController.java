@@ -3,6 +3,7 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.AccountDTO;
 import com.cloudio.rest.dto.InviteAccountDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.exception.AccountProfileImageNotFoundException;
 import com.cloudio.rest.exception.UnautherizedToInviteException;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.pojo.AccountStatus;
@@ -51,7 +52,7 @@ public class AccountController {
                 })
                 .flatMap(accountRepository::save)
                 .map(AccountMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
     @PostMapping("/invite/{companyId}")
@@ -66,7 +67,7 @@ public class AccountController {
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
                         inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
-                .switchIfEmpty(Mono.error(new UnautherizedToInviteException()));
+                .switchIfEmpty(Mono.error(UnautherizedToInviteException::new));
     }
 
     @PostMapping("/avatar")
@@ -86,6 +87,24 @@ public class AccountController {
                         }))
                 .flatMap(accountRepository::save)
                 .map(AccountMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
+
+    @DeleteMapping("/avatar")
+    public Mono<AccountDTO> deleteProfileImage(@RequestHeader("accountId") final String accountId) {
+        log.info("delete avatar is called for accountId {}", accountId);
+        return accountRepository.deleteProfileUrlByAccountId(accountId, AccountStatus.ACTIVE)
+                .doOnNext(accountDo -> awss3Services.deleteFilesInS3(accountDo.getProfileUrl().substring(accountDo.getProfileUrl().lastIndexOf("/") + 1)))
+                .map(accountDo -> {
+                    accountDo.setProfileUrl(null);
+                    return accountDo;
+                })
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(AccountProfileImageNotFoundException::new));
+    }
+
+//    @PostMapping("/state")
+//    public Mono<AccountDTO> setState(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state") final String state) {
+//
+//    }
 }

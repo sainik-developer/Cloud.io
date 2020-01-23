@@ -94,4 +94,11 @@ public class GroupErrorAdvice {
         }
         return errors;
     }
+
+    @ExceptionHandler(value = AccountProfileImageNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO accountProfileImageNotFoundException(final Exception e) {
+        return new ResponseDTO(1032, "This operation is not possible", null);
+    }
+
 }
