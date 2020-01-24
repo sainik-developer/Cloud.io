@@ -12,10 +12,7 @@ import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.mapper.GroupMapper;
-import com.cloudio.rest.pojo.AccountState;
-import com.cloudio.rest.pojo.AccountStatus;
-import com.cloudio.rest.pojo.AccountType;
-import com.cloudio.rest.pojo.CompanyStatus;
+import com.cloudio.rest.pojo.*;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.GroupRepository;
@@ -47,12 +44,71 @@ public class CompanyController {
     private final GroupService groupService;
     private final GroupRepository groupRepository;
 
-    @GetMapping("/group")
+    @GetMapping("/")
+    public Mono<CompanyDTO> getCompanyByAccountId(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(AccountDO::getCompanyId)
+                .flatMap(companyRepository::findByCompanyId)
+                .flatMap(companyDo -> groupRepository.findByCompanyId(companyDo.getCompanyId())
+                        .flatMap(groupDo -> {
+                            if (groupDo.getGroupType() == GroupType.DEFAULT) {
+                                return accountRepository.findByCompanyIdAndStatus(groupDo.getCompanyId(), AccountStatus.ACTIVE)
+                                        .map(AccountMapper.INSTANCE::toDTO)
+                                        .collectList()
+                                        .map(accountDtos -> {
+                                            final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
+                                            groupDto.setMembers(accountDtos);
+                                            return groupDto;
+                                        })
+                                        .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
+                            } else {
+                                return accountRepository.findByAccountIdsAndStatus(groupDo.getMembers(), AccountStatus.ACTIVE)
+                                        .map(AccountMapper.INSTANCE::toDTO)
+                                        .collectList()
+                                        .map(accountDtos -> {
+                                            final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
+                                            groupDto.setMembers(accountDtos);
+                                            return groupDto;
+                                        })
+                                        .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
+                            }
+                        })
+                        .collectList()
+                        .map(groupDtos -> {
+                            final CompanyDTO companyDto = CompanyMapper.INSTANCE.toDTO(companyDo);
+                            companyDto.setGroups(groupDtos);
+                            return companyDto;
+                        }));
+    }
+
+    @GetMapping("/groups")
     public Flux<GroupDTO> groups(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountId(accountId)
                 .doOnNext(accountDo -> log.info("Group is retrieving for {}", accountDo.getCompanyId()))
                 .flatMapMany(accountDo -> groupRepository.findByCompanyId(accountDo.getCompanyId()))
-                .map(GroupMapper.INSTANCE::toDTO)
+                .flatMap(groupDo -> {
+                    if (groupDo.getGroupType() == GroupType.DEFAULT) {
+                        return accountRepository.findByCompanyIdAndStatus(groupDo.getCompanyId(), AccountStatus.ACTIVE)
+                                .map(AccountMapper.INSTANCE::toDTO)
+                                .collectList()
+                                .map(accountDtos -> {
+                                    final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
+                                    groupDto.setMembers(accountDtos);
+                                    return groupDto;
+                                })
+                                .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
+                    } else {
+                        return accountRepository.findByAccountIdsAndStatus(groupDo.getMembers(), AccountStatus.ACTIVE)
+                                .map(AccountMapper.INSTANCE::toDTO)
+                                .collectList()
+                                .map(accountDtos -> {
+                                    final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
+                                    groupDto.setMembers(accountDtos);
+                                    return groupDto;
+                                })
+                                .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
+                    }
+                })
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
@@ -137,7 +193,7 @@ public class CompanyController {
     public Flux<AccountDTO> getAllMembersByCompany(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state", defaultValue = "", required = false) final String state) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getCompanyId)
-                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyId(companyId))
+                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }

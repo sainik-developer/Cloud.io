@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 
 @Data
 @Builder
@@ -17,4 +19,5 @@ public class GroupDTO {
     @JsonIgnore
     private String companyId;
     private GroupType groupType;
+    private List<AccountDTO> members;
 }
