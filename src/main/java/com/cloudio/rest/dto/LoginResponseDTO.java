@@ -15,6 +15,4 @@ import lombok.NoArgsConstructor;
 public class LoginResponseDTO {
     @JsonProperty(value = "Authorization")
     private String authorization;
-    private String accountId;
-    private String refreshToken;
 }

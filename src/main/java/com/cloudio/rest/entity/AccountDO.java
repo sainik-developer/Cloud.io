@@ -4,6 +4,8 @@ import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -40,4 +42,13 @@ public class AccountDO {
     private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
     private AccountState state;
+
+    public String getRegionCodeForCountryCode() {
+        try {
+            return PhoneNumberUtil.getInstance().getRegionCodeForCountryCode(PhoneNumberUtil.getInstance().parse(phoneNumber, null).getCountryCode());
+        } catch (final NumberParseException e) {
+            return "NL";
+        }
+    }
+
 }

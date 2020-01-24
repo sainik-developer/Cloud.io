@@ -1,8 +1,6 @@
 package com.cloudio.rest.service;
 
-import com.cloudio.rest.dto.AccountDTO;
 import com.cloudio.rest.entity.AccountDO;
-import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
@@ -25,10 +23,9 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
 
-    public Mono<AccountDTO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
+    public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
-                .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()))
-                .map(AccountMapper.INSTANCE::toDTO);
+                .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()));
     }
 
     private AccountDO createDO(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
