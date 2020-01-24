@@ -4,10 +4,13 @@ import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @Repository
 public interface AccountRepository extends ReactiveMongoRepository<AccountDO, String>, CustomAccountRepository {
@@ -25,7 +28,10 @@ public interface AccountRepository extends ReactiveMongoRepository<AccountDO, St
 
     Mono<AccountDO> findByAccountId(final String accountId);
 
-    Flux<AccountDO> findByCompanyId(final String companyId);
+    @Query("{'accountId' :{$in : ?0 },'status' : ?1}")
+    Flux<AccountDO> findByAccountIdsAndStatus(final List<String> accountIds, final AccountStatus status);
+
+    Flux<AccountDO> findByCompanyIdAndStatus(final String companyId, final AccountStatus status);
 
     Flux<AccountDO> findByCompanyIdAndStatusAndState(final String companyId, final AccountStatus status, final AccountState state);
 }
