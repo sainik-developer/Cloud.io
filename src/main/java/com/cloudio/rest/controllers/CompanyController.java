@@ -62,7 +62,7 @@ public class CompanyController {
                                         .map(accountDtos -> {
                                             final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                             groupDto.setMembers(accountDtos);
-                                            groupDto.setGroupState(isGroupOnline(accountDtos) ? ONLINE : OFFLINE);
+                                            groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                             return groupDto;
                                         })
 
@@ -74,7 +74,7 @@ public class CompanyController {
                                         .map(accountDtos -> {
                                             final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                             groupDto.setMembers(accountDtos);
-                                            groupDto.setGroupState(isGroupOnline(accountDtos) ? ONLINE : OFFLINE);
+                                            groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                             return groupDto;
                                         })
                                         .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
@@ -101,7 +101,7 @@ public class CompanyController {
                                 .map(accountDtos -> {
                                     final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                     groupDto.setMembers(accountDtos);
-                                    groupDto.setGroupState(isGroupOnline(accountDtos) ? ONLINE : OFFLINE);
+                                    groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                     return groupDto;
                                 })
                                 .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
@@ -112,7 +112,7 @@ public class CompanyController {
                                 .map(accountDtos -> {
                                     final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                     groupDto.setMembers(accountDtos);
-                                    groupDto.setGroupState(isGroupOnline(accountDtos) ? ONLINE : OFFLINE);
+                                    groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                     return groupDto;
                                 })
                                 .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
@@ -206,13 +206,4 @@ public class CompanyController {
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
-
-    /**
-     * @param accountDTOS
-     * @return Check if group is online or offline.
-     */
-    private boolean isGroupOnline(List<AccountDTO> accountDTOS){
-        return accountDTOS.stream().map(AccountDTO::getState).anyMatch(accountState -> accountState==AccountState.ONLINE);
-    }
-
 }
