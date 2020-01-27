@@ -58,8 +58,10 @@ public class CompanyController {
                                         .map(accountDtos -> {
                                             final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                             groupDto.setMembers(accountDtos);
+                                            groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                             return groupDto;
                                         })
+
                                         .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
                             } else {
                                 return accountRepository.findByAccountIdsAndStatus(groupDo.getMembers(), AccountStatus.ACTIVE)
@@ -68,6 +70,7 @@ public class CompanyController {
                                         .map(accountDtos -> {
                                             final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                             groupDto.setMembers(accountDtos);
+                                            groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                             return groupDto;
                                         })
                                         .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
@@ -94,6 +97,7 @@ public class CompanyController {
                                 .map(accountDtos -> {
                                     final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                     groupDto.setMembers(accountDtos);
+                                    groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                     return groupDto;
                                 })
                                 .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
@@ -104,6 +108,7 @@ public class CompanyController {
                                 .map(accountDtos -> {
                                     final GroupDTO groupDto = GroupMapper.INSTANCE.toDTO(groupDo);
                                     groupDto.setMembers(accountDtos);
+                                    groupDto.setGroupState(groupService.getGroupStatus(accountDtos));
                                     return groupDto;
                                 })
                                 .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
