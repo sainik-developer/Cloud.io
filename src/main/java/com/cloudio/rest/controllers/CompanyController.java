@@ -44,7 +44,7 @@ public class CompanyController {
     private final GroupService groupService;
     private final GroupRepository groupRepository;
 
-    @GetMapping("/")
+    @GetMapping
     public Mono<CompanyDTO> getCompanyByAccountId(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getCompanyId)
