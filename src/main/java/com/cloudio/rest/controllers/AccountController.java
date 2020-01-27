@@ -14,9 +14,9 @@ import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
+import com.cloudio.rest.service.FirebaseService;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.cloudio.rest.service.FirebaseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -128,7 +128,8 @@ public class AccountController {
                                      @RequestParam(value = "state") @Pattern(regexp = "ONLINE|OFFLINE") final String state) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountD -> accountRepository.updateByAccountId(accountId, AccountStatus.ACTIVE, AccountState.valueOf(state)))
-                .map(AccountMapper.INSTANCE::toDTO);
+                .map(AccountMapper.INSTANCE::toDTO)
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
     @GetMapping("/refreshFirebaseToken")

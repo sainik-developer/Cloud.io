@@ -1,5 +1,6 @@
 package com.cloudio.rest.dto;
 
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.AskfastDetail;
@@ -39,4 +40,5 @@ public class AccountDTO {
     private AccountType type;
     @JsonIgnore
     private AskfastDetail askfastDetail;
+    private AccountState state;
 }
