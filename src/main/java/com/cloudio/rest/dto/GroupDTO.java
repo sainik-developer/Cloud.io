@@ -1,5 +1,6 @@
 package com.cloudio.rest.dto;
 
+import com.cloudio.rest.pojo.GroupState;
 import com.cloudio.rest.pojo.GroupType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -19,5 +20,6 @@ public class GroupDTO {
     @JsonIgnore
     private String companyId;
     private GroupType groupType;
+    private GroupState groupState;
     private List<AccountDTO> members;
 }
