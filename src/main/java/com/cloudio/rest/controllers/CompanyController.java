@@ -27,11 +27,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
-
-import static com.cloudio.rest.pojo.GroupState.OFFLINE;
-import static com.cloudio.rest.pojo.GroupState.ONLINE;
 
 @Log4j2
 @RestController
