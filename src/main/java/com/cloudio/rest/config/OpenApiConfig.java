@@ -12,13 +12,7 @@ import io.swagger.v3.oas.annotations.info.Contact;
                         name = "sainik",
                         email = "schattapadhyay@ask-fast.com"
                 )
-        ),
-        servers = {
-                @Server(
-                        url = "http://ec2-54-194-107-63.eu-west-1.compute.amazonaws.com/cloudio",
-                        description = "sandbox Server"
-                )
-        }
+        )
 )
 public class OpenApiConfig {
 }
