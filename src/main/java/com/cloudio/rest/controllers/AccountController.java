@@ -20,6 +20,7 @@ import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -64,7 +65,7 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
-    @PostMapping("/invite/{companyId}")
+    @PostMapping(value = "/invite/{companyId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(value = HttpStatus.CREATED)
     Flux<AccountDTO> inviteMember(@RequestHeader("accountId") final String accountId,
                                   @PathVariable("companyId") final String companyId,
@@ -74,11 +75,11 @@ public class AccountController {
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("accountId = {} is Admin for given companyId = {} found, hence going to invite members", accountId, companyId))
                 .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos.stream()
-                        .collect(Collectors.toMap(InviteAccountDTO::getPhoneNumber, inviteAccountDTO -> inviteAccountDTO))
-                        .values().stream().peek(inviteAccountDTO -> {
+                        .collect(Collectors.toMap(InviteAccountDTO::getPhoneNumber, inviteAccountDto -> inviteAccountDto))
+                        .values().stream().peek(inviteAccountDto -> {
                             try {
-                                inviteAccountDTO.setPhoneNumber(PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance()
-                                                .parse(inviteAccountDTO.getPhoneNumber(), accountDo.getRegionCodeForCountryCode()),
+                                inviteAccountDto.setPhoneNumber(PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance()
+                                                .parse(inviteAccountDto.getPhoneNumber(), accountDo.getRegionCodeForCountryCode()),
                                         PhoneNumberUtil.PhoneNumberFormat.E164));
                             } catch (final NumberParseException e) {
                                 log.error("error while formatting phone number with country code");
@@ -90,7 +91,7 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(UnautherizedToInviteException::new));
     }
 
-    @PostMapping("/avatar")
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<AccountDTO> uploadProfileImage(@RequestHeader("accountId") final String accountId,
                                                @RequestPart(value = "image") Mono<FilePart> file) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)

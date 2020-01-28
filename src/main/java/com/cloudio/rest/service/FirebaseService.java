@@ -40,7 +40,6 @@ public class FirebaseService {
         }
     }
 
-
     public String refreshFireBaseCustomToken(final String accountId) {
         try {
             return FirebaseAuth.getInstance().createCustomToken(accountId);

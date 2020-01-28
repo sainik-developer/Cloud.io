@@ -41,7 +41,7 @@ public class AccountDO {
     private String firebaseAuthToken;
     private AccountStatus status = AccountStatus.ACTIVE;
     private AccountType type;
-    private AccountState state;
+    private AccountState state = AccountState.OFFLINE;
 
     public String getRegionCodeForCountryCode() {
         try {
