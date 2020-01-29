@@ -24,8 +24,10 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
-        return accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
-                .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()));
+        return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
+                .doOnNext(accountDo -> log.info("Account is found with phone Number {} for company {}", accountDo.getPhoneNumber(), companyId))
+                .switchIfEmpty(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
+                        .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId())));
     }
 
     private AccountDO createDO(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
