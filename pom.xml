@@ -132,7 +132,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${org.mapstruct.version}</version>
-            <scope>provided</scope>
         </dependency>
         <!--Boiler code reduction lib-->
         <dependency>

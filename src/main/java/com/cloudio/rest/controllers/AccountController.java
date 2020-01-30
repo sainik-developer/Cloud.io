@@ -31,6 +31,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Pattern;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Validated
@@ -73,8 +74,9 @@ public class AccountController {
         log.info("Invitation going to be sent to accountId {} and companyId {}", accountId, companyId);
         return accountRepository.findByAccountIdAndCompanyIdAndTypeAndStatus(accountId, companyId, AccountType.ADMIN, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("accountId = {} is Admin for given companyId = {} found, hence going to invite members", accountId, companyId))
-                .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos)
-                        .doOnNext(inviteAccountDto -> {
+                .flatMapMany(accountDo -> Flux.fromIterable(inviteAccountDtos.stream()
+                        .collect(Collectors.toMap(InviteAccountDTO::getPhoneNumber, inviteAccountDto -> inviteAccountDto))
+                        .values().stream().peek(inviteAccountDto -> {
                             try {
                                 inviteAccountDto.setPhoneNumber(PhoneNumberUtil.getInstance().format(PhoneNumberUtil.getInstance()
                                                 .parse(inviteAccountDto.getPhoneNumber(), accountDo.getRegionCodeForCountryCode()),
@@ -82,7 +84,7 @@ public class AccountController {
                             } catch (final NumberParseException e) {
                                 log.error("error while formatting phone number with country code");
                             }
-                        }))
+                        }).collect(Collectors.toList())))
                 .flatMap(inviteAccountDto -> accountService.createAccount(companyId,
                         inviteAccountDto.getPhoneNumber(), AccountType.MEMBER, inviteAccountDto.getFirstName(), inviteAccountDto.getLastName()))
                 .map(AccountMapper.INSTANCE::toDTO)

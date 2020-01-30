@@ -1,6 +1,7 @@
 package com.cloudio.rest.service;
 
 import com.cloudio.rest.entity.AccountDO;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
@@ -35,6 +36,7 @@ public class AccountService {
                 .type(accountType).firstName(firstName)
                 .detail(accountType == AccountType.ADMIN ? BrainTreeDetail.builder().planId(planId).build() : null)
                 .lastName(lastname).status(AccountStatus.ACTIVE)
+                .state(AccountState.OFFLINE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build();
