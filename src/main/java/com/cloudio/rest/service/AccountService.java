@@ -1,6 +1,7 @@
 package com.cloudio.rest.service;
 
 import com.cloudio.rest.entity.AccountDO;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
@@ -24,8 +25,10 @@ public class AccountService {
     private final AccountRepository accountRepository;
 
     public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
-        return accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
-                .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId()));
+        return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
+                .doOnNext(accountDo -> log.info("Account is found with phone Number {} for company {}", accountDo.getPhoneNumber(), companyId))
+                .switchIfEmpty(accountRepository.save(createDO(companyId, phoneNumber, accountType, firstName, lastname))
+                        .doOnNext(accountDo -> log.info("Account is just created successfully for phone number {} and companyId {}", accountDo.getPhoneNumber(), accountDo.getCompanyId())));
     }
 
     private AccountDO createDO(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
@@ -33,6 +36,7 @@ public class AccountService {
                 .type(accountType).firstName(firstName)
                 .detail(accountType == AccountType.ADMIN ? BrainTreeDetail.builder().planId(planId).build() : null)
                 .lastName(lastname).status(AccountStatus.ACTIVE)
+                .state(AccountState.OFFLINE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build();

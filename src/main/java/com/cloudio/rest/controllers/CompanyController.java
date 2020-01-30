@@ -138,16 +138,17 @@ public class CompanyController {
                 .map(CompanyMapper.INSTANCE::fromDTO)
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
-                .flatMap(companyDto -> groupService.createDefaultGroup(companyDto.getCompanyId())
-                        .doOnNext(groupDo -> log.info("Default group is created and details are {}", groupDo))
-                        .map(GroupMapper.INSTANCE::toDTO)
-                        .map(groupDto -> {
-                            companyDto.setGroups(Collections.singletonList(groupDto));
-                            return companyDto;
-                        })
-                )
-                .flatMap(companyDto -> accountService.createAccount(companyDto.getCompanyId(), authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(), AccountType.ADMIN, null, null)
-                        .map(accountDto -> companyDto))
+                .flatMap(companyDto -> accountService.createAccount(companyDto.getCompanyId(),
+                        authService.decodeTempAuthToken(authorizationToken).getPhoneNumber(),
+                        AccountType.ADMIN, null, null)
+                        .flatMap(accountDo -> groupService.createDefaultGroup(companyDto.getCompanyId())
+                                .doOnNext(groupDo -> log.info("Default group is created and details are {}", groupDo))
+                                .map(GroupMapper.INSTANCE::toDTO)
+                                .map(groupDto -> {
+                                    groupDto.setMembers(Collections.singletonList(AccountMapper.INSTANCE.toDTO(accountDo)));
+                                    companyDto.setGroups(Collections.singletonList(groupDto));
+                                    return companyDto;
+                                })))
                 .switchIfEmpty(Mono.error(new InvalidTempTokenException("Temp token is invalid")));
     }
 
@@ -198,7 +199,7 @@ public class CompanyController {
     public Flux<AccountDTO> getAllMembersByCompany(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state", defaultValue = "", required = false) final String state) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getCompanyId)
-                .flatMapMany(companyId -> state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
+                .flatMapMany(companyId -> !state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
