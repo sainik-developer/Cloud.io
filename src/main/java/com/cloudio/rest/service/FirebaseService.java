@@ -7,10 +7,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.messaging.BatchResponse;
-import com.google.firebase.messaging.FirebaseMessaging;
-import com.google.firebase.messaging.FirebaseMessagingException;
-import com.google.firebase.messaging.MulticastMessage;
+import com.google.firebase.messaging.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
@@ -77,5 +74,18 @@ public class FirebaseService {
                     }
                 })
                 .map(BatchResponse::getSuccessCount);
+    }
+
+    public Mono<Integer> sendNotificationToAccount(final String token, final Map<String, String> data) {
+
+        return Mono.just(Message.builder().putAllData(data).setToken(token).build())
+                .map(message -> {
+                    try {
+                        return FirebaseMessaging.getInstance().send(message);
+                    } catch (final FirebaseMessagingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .map(s -> 1);
     }
 }

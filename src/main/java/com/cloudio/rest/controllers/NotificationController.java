@@ -29,11 +29,21 @@ public class NotificationController {
     private final TokenRepository tokenRepository;
     private final NotificationService notificationService;
 
-    @PostMapping("/sendToAccount")
+  /*  @PostMapping("/sendToAccount")
     Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId, @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> tokenRepository.findByAccountId(notificationSendRequestDTO.getAccountId())
                         .flatMap(tokenDO -> notificationService.sendNotification(tokenDO.getDevice(), tokenDO.getToken(), notificationSendRequestDTO.getData()))
+                        .filter(Boolean::booleanValue)
+                        .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
+                        .switchIfEmpty(Mono.error(new AccountNotExistException())));
+    }*/
+
+    @PostMapping("/sendToAccount")
+    Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId, @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .flatMap(accountDO -> tokenRepository.findByAccountId(notificationSendRequestDTO.getAccountId())
+                        .flatMap(tokenDO -> notificationService.sendNotificationToAccount(tokenDO, notificationSendRequestDTO.getData()))
                         .filter(Boolean::booleanValue)
                         .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
                         .switchIfEmpty(Mono.error(new AccountNotExistException())));
@@ -43,17 +53,9 @@ public class NotificationController {
     Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId, @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
-                .doOnNext(groupDO -> notificationService.sendNotificationToGroup(groupDO,notificationSendRequestDTO.getData()))
-
-                .filter(groupDo -> groupDo.getGroupType()== GroupType.DEFAULT)
-                .flatMap(groupDO -> companyRepository.findByCompanyId(groupDO.getCompanyId()))
-                .flatMapMany(companyDO -> accountRepository.findByCompanyIdAndStatus(companyDO.getCompanyId(), AccountStatus.ACTIVE))
-                .flatMap(accountDO -> tokenRepository.findByAccountId(accountDO.getAccountId()))
-                .flatMap(tokenDO -> notificationService.sendNotificationToGroup(tokenDO.getDevice(), tokenDO.getToken(), notificationSendRequestDTO.getData()))
-
+                .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO,notificationSendRequestDTO.getData()))
                 .filter(Boolean::booleanValue)
-                .reduce((aBoolean, aBoolean2) -> aBoolean & aBoolean2)
-                .map(aBoolean -> ResponseDTO.builder().data(aBoolean).message("Notification sent to all group members...").build())
+                .map(aBoolean -> ResponseDTO.builder().message("Notification sent to all group members...").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
