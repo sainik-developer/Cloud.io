@@ -18,6 +18,6 @@ public class TokenDTO {
     @NotBlank(message = "token can't be empty")
     private String token;
     @Pattern(regexp = "ios|android")
-    private String device = "ios";
+    private String device;
 
 }
