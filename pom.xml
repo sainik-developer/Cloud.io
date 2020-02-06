@@ -147,6 +147,18 @@
             <artifactId>commons-lang3</artifactId>
             <version>${apache.common.version}</version>
         </dependency>
+        <!--Apple push-->
+        <dependency>
+            <groupId>com.turo</groupId>
+            <artifactId>pushy</artifactId>
+            <version>0.13.10</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+            <version>2.0.25.Final</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
