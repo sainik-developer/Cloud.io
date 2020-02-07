@@ -56,7 +56,6 @@ public class NotificationService {
                 .groupBy(TokenDO::getDevice)
                 .flatMap(tokenDOGroupedFlux -> tokenDOGroupedFlux.collectList()
                         .flatMap(tokenDos -> tokenDOGroupedFlux.key().equals("ios") ? apnService.send(tokenDos, data) : firebaseService.send(tokenDos, data)))
-                        .flatMap(tokenDos -> tokenDOGroupedFlux.key().equals("ios") ? apnsService.send(tokenDos, data) : firebaseService.send(tokenDos, data)))
                 .switchIfEmpty(Mono.error(new RuntimeException("Only default group is supported now!")));
 
 
