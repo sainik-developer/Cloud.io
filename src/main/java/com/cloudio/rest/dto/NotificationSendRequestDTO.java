@@ -17,6 +17,6 @@ public class NotificationSendRequestDTO {
 
     private String accountId;
     private String groupId;
-    private Map<String, Object> data;
+    private Map<String, String> data;
 
 }

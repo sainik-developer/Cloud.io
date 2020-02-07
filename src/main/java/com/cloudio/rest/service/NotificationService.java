@@ -13,14 +13,18 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
+@Service
 public class NotificationService {
     private final APNService apnService;
     private final TokenRepository tokenRepository;
@@ -38,6 +42,10 @@ public class NotificationService {
 //            return Mono.just(true);
 //        return Mono.just(false);
 //    }
+    public Mono<Boolean> sendNotificationToAccount(final TokenDO tokenDO, final Map<String, String> data) {
+        return Mono.just(tokenDO.getDevice().equals("ios") ? apnsService.send() : firebaseService.sendNotificationToAccount(tokenDO.getToken(), data))
+                .switchIfEmpty(new RuntimeException());
+    }
 
     public Mono<Boolean> sendNotificationToGroup(final GroupDO groupDO, final Map<String, Object> data) {
         return Mono.just(groupDO)
@@ -48,6 +56,7 @@ public class NotificationService {
                 .groupBy(TokenDO::getDevice)
                 .flatMap(tokenDOGroupedFlux -> tokenDOGroupedFlux.collectList()
                         .flatMap(tokenDos -> tokenDOGroupedFlux.key().equals("ios") ? apnService.send(tokenDos, data) : firebaseService.send(tokenDos, data)))
+                        .flatMap(tokenDos -> tokenDOGroupedFlux.key().equals("ios") ? apnsService.send(tokenDos, data) : firebaseService.send(tokenDos, data)))
                 .switchIfEmpty(Mono.error(new RuntimeException("Only default group is supported now!")));
 
 
