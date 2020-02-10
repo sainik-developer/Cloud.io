@@ -16,6 +16,7 @@ import java.util.Map;
 public class NotificationSendRequestDTO {
 
     private String accountId;
+    private String companyId;
     private String groupId;
     private Map<String, String> data;
 

@@ -8,6 +8,6 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface GroupRepository extends ReactiveMongoRepository<GroupDO, String> {
-    Flux<GroupDO> findByCompanyId(final String accountId);
+     Flux<GroupDO> findByCompanyId(final String accountId);
      Mono<GroupDO> findByGroupId(final String groupId);
 }

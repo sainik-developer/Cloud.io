@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class TokenStatsController {
 
     @CrossOrigin
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public List<TokenStatsDO> findByDate(@RequestParam("page") int page, @RequestParam("size") int size) {
+    public Flux<TokenStatsDO> findByDate(@RequestParam("page") int page, @RequestParam("size") int size) {
         return tokenStatsRepository.findByDateTime(PageRequest.of(page, size, new Sort(Sort.Direction.DESC, "updatedTime")));
     }
 }

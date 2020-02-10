@@ -1,5 +1,11 @@
 package com.cloudio.rest.service;
 
+import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.entity.AccountDO;
+import com.cloudio.rest.entity.GroupDO;
+import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.pojo.AccountStatus;
+import com.cloudio.rest.pojo.GroupType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.TokenRepository;
@@ -37,7 +43,7 @@ public class NotificationService {
     private Integer maxRingTime;
 
 
-//    public Mono<Boolean> sendNotification(final String token, final Map<String, Object> data) {
+    //    public Mono<Boolean> sendNotification(final String token, final Map<String, Object> data) {
 //        if (flag)
 //            return Mono.just(true);
 //        return Mono.just(false);
@@ -47,19 +53,19 @@ public class NotificationService {
 //                .switchIfEmpty(new RuntimeException());
 //    }
 //
-//    public Mono<Boolean> sendNotificationToGroup(final GroupDO groupDO, final Map<String, Object> data) {
-//        return Mono.just(groupDO)
-//                .filter(groupDo -> groupDo.getGroupType() == GroupType.DEFAULT)
-//                .flatMap(groupDo -> companyRepository.findByCompanyId(groupDO.getCompanyId()))
-//                .flatMapMany(companyDO -> accountRepository.findByCompanyIdAndStatus(companyDO.getCompanyId(), AccountStatus.ACTIVE))
-//                .flatMap(accountDO -> tokenRepository.findByAccountId(accountDO.getAccountId()))
-//                .groupBy(TokenDO::getDevice)
-//                .flatMap(tokenDOGroupedFlux -> tokenDOGroupedFlux.collectList()
-//                        .flatMap(tokenDos -> tokenDOGroupedFlux.key().equals("ios") ? apnService.send(tokenDos, data) : firebaseService.send(tokenDos, data)))
-//                .switchIfEmpty(Mono.error(new RuntimeException("Only default group is supported now!")));
-//
-//
-//    }
+    public Mono<Boolean> sendNotificationToGroup(final GroupDO groupDO, final Map<String, String> data) {
+        return Mono.just(groupDO)
+                .filter(groupDo -> groupDo.getGroupType() == GroupType.DEFAULT)
+                .flatMap(groupDo -> companyRepository.findByCompanyId(groupDO.getCompanyId()))
+                .flatMap(companyDO -> accountRepository.findByCompanyIdAndStatus(companyDO.getCompanyId(), AccountStatus.ACTIVE)
+                        .map(AccountDO::getAccountId)
+                        .collectList()
+                        .flatMapMany(accountIds -> sendAlertNotification(accountIds, data))
+                        .collectList()
+                        .map(integers -> integers.stream().anyMatch(integer -> integer == 1))
+                )
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+    }
 
     enum OSType {
         ANDROID,
