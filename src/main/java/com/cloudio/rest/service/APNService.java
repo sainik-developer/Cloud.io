@@ -48,58 +48,63 @@ public class APNService {
         apnsBackgroundTopic = apnsBundleId;
     }
 
-//    /***
-//     * TODO we have to convert when it comes into work @Akash you try to refactor
-//     * @param voipToken
-//     * @param stringObjectMap
-//     * @param notificationId
-//     */
-//    public void sendVOIPNotification(final String voipToken, final Map<String, Object> stringObjectMap, final UUID notificationId) {
-//        final ApnsPayloadBuilder apnsPayloadBuilder = new ApnsPayloadBuilder();
-//        stringObjectMap.forEach(apnsPayloadBuilder::addCustomProperty);
-//        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
-//                apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(voipToken), apnsVOIPTopic,
-//                        apnsPayloadBuilder.buildWithDefaultMaximumLength(), null,
-//                        DeliveryPriority.IMMEDIATE, PushType.VOIP, null, notificationId));
-//        log.info("apns voip is sent . waiting for response for voip token {}", voipToken);
-//        sendNotificationFuture.addListener(future -> {
-//            if (future.isSuccess()) {
-//                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture.getNow();
-//                final TokenStatsDO tokenStatsDo = tokenStatsRepository.findByNotificationId(pushNotificationResponse.getApnsId().toString());
-//                if (tokenStatsDo != null) {
-//                    tokenStatsDo.setStatus(pushNotificationResponse.isAccepted() ? "DELIVERED" : pushNotificationResponse.getRejectionReason());
-//                    tokenStatsDo.setPayload(apnsPayloadBuilder.buildWithDefaultMaximumLength());
-//                }
-//                tokenStatsRepository.save(tokenStatsDo);
-//                log.info("apns voip is sent successfully for accountId {} and response is {}", voipToken, pushNotificationResponse.toString());
-//            } else {
-//                final TokenStatsDO tokenStatsDo = tokenStatsRepository.findByNotificationId(notificationId.toString());
-//                if (tokenStatsDo != null) {
-//                    tokenStatsDo.setStatus("FAILED");
-//                    tokenStatsDo.setExtraReason(future.cause().toString());
-//                    tokenStatsDo.setPayload(apnsPayloadBuilder.buildWithDefaultMaximumLength());
-//                }
-//                tokenStatsRepository.save(tokenStatsDo);
-//                log.info("apns voip is sent failed for accountId {} ", voipToken);
-//                future.cause().printStackTrace();
-//            }
-//        });
-//    }
+    /***
+     * @param voipToken
+     * @param data
+     * @param notificationId
+     */
+    public Mono<Boolean> sendVOIPNotification(final String voipToken, final Map<String, String> data, final UUID notificationId) {
+        final ApnsPayloadBuilder apnsPayloadBuilder = new ApnsPayloadBuilder();
+        data.forEach(apnsPayloadBuilder::addCustomProperty);
+        return Mono.create((Consumer<MonoSink<PushNotificationResponse<SimpleApnsPushNotification>>>) monoSink -> {
+            final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
+                    apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(voipToken), apnsVOIPTopic,
+                            apnsPayloadBuilder.buildWithDefaultMaximumLength(), null,
+                            DeliveryPriority.IMMEDIATE, PushType.VOIP, null, notificationId));
+            sendNotificationFuture.addListener((GenericFutureListener<Future<PushNotificationResponse<SimpleApnsPushNotification>>>) future -> {
+                if (future.isSuccess()) {
+                    monoSink.success(future.getNow());
+                } else {
+                    monoSink.error(new RuntimeException(future.cause().toString()));
+                }
+            });
+        })
+                .doOnNext(response -> log.info("apns voip is sent . waiting for response for voip token {}", voipToken))
+                .flatMap(apnsResponse -> tokenStatsRepository.findByNotificationId(apnsResponse.getApnsId().toString())
+                        .map(tokenStatsDo -> {
+                            tokenStatsDo.setStatus(apnsResponse.isAccepted() ? "DELIVERED" : apnsResponse.getRejectionReason());
+                            tokenStatsDo.setPayload(apnsResponse.getPushNotification().getPayload());
+                            return tokenStatsDo;
+                        }).flatMap(tokenStatsRepository::save)
+                        .map(tokenStatsDO -> apnsResponse.isAccepted()))
+                .doOnError(throwable -> {
+                    log.info("alert apns is sent failed for accountId {} ", voipToken);
+                    throwable.printStackTrace();
+                    tokenStatsRepository.findByNotificationId(notificationId.toString())
+                            .map(tokenStatsDo -> {
+                                tokenStatsDo.setStatus("FAILED");
+                                tokenStatsDo.setExtraReason(throwable.getMessage());
+                                tokenStatsDo.setPayload(createAlertBuilder(data).buildWithDefaultMaximumLength());
+                                return tokenStatsDo;
+                            })
+                            .flatMap(tokenStatsRepository::save)
+                            .subscribe();
+                });
+    }
 
 
     public Mono<Integer> sendAlertNotifications(final List<Pair<String, String>> uUIDAndtokens, final Map<String, String> data) {
         return Flux.fromIterable(uUIDAndtokens)
                 .flatMap(uUIDAndtoken -> this.sendAlertNotification(uUIDAndtoken.getRight(), data, UUID.fromString(uUIDAndtoken.getLeft())))
                 .collectList()
-                .map(booleans -> booleans.stream().anyMatch(Boolean::booleanValue))
-                .map(aBoolean -> 1);
+                .map(booleans -> booleans.stream().anyMatch(Boolean::booleanValue) ? 1 : 0);
     }
 
     public Mono<Boolean> sendAlertNotification(final String apnsToken, final Map<String, String> data, final UUID notificationId) {
         return Mono.create((Consumer<MonoSink<PushNotificationResponse<SimpleApnsPushNotification>>>) monoSink -> {
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
                     apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(apnsToken), apnsALERTTopic,
-                            createBuilder(data).buildWithDefaultMaximumLength(), null,
+                            createAlertBuilder(data).buildWithDefaultMaximumLength(), null,
                             DeliveryPriority.IMMEDIATE, PushType.ALERT, null, notificationId));
             log.info("alert apns is sent . waiting for response for apns token {}", apnsToken);
             sendNotificationFuture.addListener((GenericFutureListener<Future<PushNotificationResponse<SimpleApnsPushNotification>>>) future -> {
@@ -125,7 +130,7 @@ public class APNService {
                             .map(tokenStatsDo -> {
                                 tokenStatsDo.setStatus("FAILED");
                                 tokenStatsDo.setExtraReason(throwable.getMessage());
-                                tokenStatsDo.setPayload(createBuilder(data).buildWithDefaultMaximumLength());
+                                tokenStatsDo.setPayload(createAlertBuilder(data).buildWithDefaultMaximumLength());
                                 return tokenStatsDo;
                             })
                             .flatMap(tokenStatsRepository::save)
@@ -133,7 +138,7 @@ public class APNService {
                 });
     }
 
-    private ApnsPayloadBuilder createBuilder(final Map<String, String> stringObjectMap) {
+    private ApnsPayloadBuilder createAlertBuilder(final Map<String, String> stringObjectMap) {
         final ApnsPayloadBuilder apnsPayloadBuilder = new ApnsPayloadBuilder();
         apnsPayloadBuilder.setAlertTitle((String) stringObjectMap.getOrDefault("title", "no title"));
         apnsPayloadBuilder.setAlertBody((String) stringObjectMap.getOrDefault("body", "no body"));
@@ -149,42 +154,49 @@ public class APNService {
 
 
     /****
-     * TODO we have to convert when it comes into work @Akash you try to refactor
      * @param apnsToken
-     * @param stringObjectMap
+     * @param data
      * @param notificationId
      */
-//    public void sendSilentNotification(final String apnsToken, final Map<String, Object> stringObjectMap, final UUID notificationId) {
-//        final ApnsPayloadBuilder apnsPayloadBuilder = new ApnsPayloadBuilder();
-//        stringObjectMap.forEach(apnsPayloadBuilder::addCustomProperty);
-//        apnsPayloadBuilder.setContentAvailable(true);
-//        apnsPayloadBuilder.addCustomProperty("apns-push-type", "background");
-//        final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
-//                apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(apnsToken), apnsBackgroundTopic,
-//                        apnsPayloadBuilder.buildWithDefaultMaximumLength(), null,
-//                        DeliveryPriority.CONSERVE_POWER, PushType.BACKGROUND, null, notificationId));
-//        log.info("silent apns is sent . waiting for response for apns token {} with body {}", apnsToken, apnsPayloadBuilder.buildWithDefaultMaximumLength());
-//        sendNotificationFuture.addListener(future -> {
-//            if (future.isSuccess()) {
-//                final PushNotificationResponse<SimpleApnsPushNotification> pushNotificationResponse = sendNotificationFuture.getNow();
-//                final TokenStatsDO tokenStatsDo = tokenStatsRepository.findByNotificationId(pushNotificationResponse.getApnsId().toString());
-//                if (tokenStatsDo != null) {
-//                    tokenStatsDo.setStatus(pushNotificationResponse.isAccepted() ? "DELIVERED" : pushNotificationResponse.getRejectionReason());
-//                    tokenStatsDo.setPayload(apnsPayloadBuilder.buildWithDefaultMaximumLength());
-//                }
-//                tokenStatsRepository.save(tokenStatsDo);
-//                log.info("silent apns is sent successfully for apns token {} and response is {}", apnsToken, pushNotificationResponse.toString());
-//            } else {
-//                final TokenStatsDO tokenStatsDo = tokenStatsRepository.findByNotificationId(notificationId.toString());
-//                if (tokenStatsDo != null) {
-//                    tokenStatsDo.setStatus("FAILED");
-//                    tokenStatsDo.setExtraReason(future.cause().toString());
-//                    tokenStatsDo.setPayload(apnsPayloadBuilder.buildWithDefaultMaximumLength());
-//                }
-//                tokenStatsRepository.save(tokenStatsDo);
-//                log.info("alert apns is sent failed for accountId {} ", apnsToken);
-//                future.cause().printStackTrace();
-//            }
-//        });
-//    }
+    public Mono<Boolean> sendSilentNotification(final String apnsToken, final Map<String, String> data, final UUID notificationId) {
+        final ApnsPayloadBuilder apnsPayloadBuilder = new ApnsPayloadBuilder();
+        data.forEach(apnsPayloadBuilder::addCustomProperty);
+        apnsPayloadBuilder.setContentAvailable(true);
+        apnsPayloadBuilder.addCustomProperty("apns-push-type", "background");
+        return Mono.create((Consumer<MonoSink<PushNotificationResponse<SimpleApnsPushNotification>>>) monoSink -> {
+            final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
+                    apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(apnsToken), apnsBackgroundTopic,
+                            apnsPayloadBuilder.buildWithDefaultMaximumLength(), null,
+                            DeliveryPriority.CONSERVE_POWER, PushType.BACKGROUND, null, notificationId));
+            log.info("silent apns is sent . waiting for response for apns token {} with body {}", apnsToken, apnsPayloadBuilder.buildWithDefaultMaximumLength());
+            sendNotificationFuture.addListener((GenericFutureListener<Future<PushNotificationResponse<SimpleApnsPushNotification>>>) future -> {
+                if (future.isSuccess()) {
+                    monoSink.success(future.getNow());
+                } else {
+                    monoSink.error(new RuntimeException(future.cause().toString()));
+                }
+            });
+        })
+                .doOnNext(response -> log.info("silent apns is sent successfully for apns token {} and response is {}", apnsToken, response.toString()))
+                .flatMap(apnsResponse -> tokenStatsRepository.findByNotificationId(apnsResponse.getApnsId().toString())
+                        .map(tokenStatsDo -> {
+                            tokenStatsDo.setStatus(apnsResponse.isAccepted() ? "DELIVERED" : apnsResponse.getRejectionReason());
+                            tokenStatsDo.setPayload(apnsResponse.getPushNotification().getPayload());
+                            return tokenStatsDo;
+                        }).flatMap(tokenStatsRepository::save)
+                        .map(tokenStatsDO -> apnsResponse.isAccepted()))
+                .doOnError(throwable -> {
+                    log.info("alert apns is sent failed for accountId {} ", apnsToken);
+                    throwable.printStackTrace();
+                    tokenStatsRepository.findByNotificationId(notificationId.toString())
+                            .map(tokenStatsDo -> {
+                                tokenStatsDo.setStatus("FAILED");
+                                tokenStatsDo.setExtraReason(throwable.getMessage());
+                                tokenStatsDo.setPayload(createAlertBuilder(data).buildWithDefaultMaximumLength());
+                                return tokenStatsDo;
+                            })
+                            .flatMap(tokenStatsRepository::save)
+                            .subscribe();
+                });
+    }
 }
