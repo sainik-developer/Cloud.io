@@ -21,6 +21,7 @@ public class TokenDO {
 
     private String accountId;
     private String token;
+    private String voipToken;
     private String device;
     @LastModifiedDate
     private LocalDateTime stamp;

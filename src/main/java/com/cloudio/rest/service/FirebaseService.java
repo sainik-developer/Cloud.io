@@ -1,6 +1,5 @@
 package com.cloudio.rest.service;
 
-import com.cloudio.rest.entity.TokenStatsDO;
 import com.cloudio.rest.exception.FirebaseException;
 import com.cloudio.rest.repository.TokenStatsRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,9 +9,9 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.messaging.*;
-import javafx.util.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -75,7 +74,7 @@ public class FirebaseService {
         String payload = null;
         try {
             payload = objectMapper.writeValueAsString(data);
-        } catch (final Exception e) {
+        } catch (final Exception ignored) {
 
         }
         final String finalPayload = payload == null ? "Contact developer for payload" : payload;
@@ -87,29 +86,28 @@ public class FirebaseService {
                     try {
                         List<SendResponse> sendResponses = FirebaseMessaging.getInstance().sendMulticast(message).getResponses();
                         return Flux.zip(Flux.fromIterable(uUIDAndtokens), Flux.fromIterable(sendResponses))
-                                .map(objects -> {
-                                    final TokenStatsDO tokenStatsDO = tokenStatsRepository.findByNotificationId(objects.getT1().getKey());
-                                    if (objects.getT2().getMessageId() != null) {
-                                        tokenStatsDO.setStatus("DELIVERED");
-                                        tokenStatsDO.setExtraReason(objects.getT2().getMessageId());
-                                        tokenStatsDO.setPayload(finalPayload);
-                                    } else if (objects.getT2().getException() != null) {
-                                        tokenStatsDO.setStatus("FAILED");
-                                        tokenStatsDO.setExtraReason(objects.getT2().getException().getMessage());
-                                        tokenStatsDO.setPayload(finalPayload);
-                                    } else {
-                                        tokenStatsDO.setStatus("FAILED");
-                                        tokenStatsDO.setExtraReason("debug it. contact developer");
-                                        tokenStatsDO.setPayload(finalPayload);
-                                    }
-                                    return tokenStatsDO;
-                                });
-
+                                .flatMap(objects -> tokenStatsRepository.findByNotificationId(objects.getT1().getKey())
+                                        .map(tokenStatsDo -> {
+                                            if (objects.getT2().getMessageId() != null) {
+                                                tokenStatsDo.setStatus("DELIVERED");
+                                                tokenStatsDo.setExtraReason(objects.getT2().getMessageId());
+                                                tokenStatsDo.setPayload(finalPayload);
+                                            } else if (objects.getT2().getException() != null) {
+                                                tokenStatsDo.setStatus("FAILED");
+                                                tokenStatsDo.setExtraReason(objects.getT2().getException().getMessage());
+                                                tokenStatsDo.setPayload(finalPayload);
+                                            } else {
+                                                tokenStatsDo.setStatus("FAILED");
+                                                tokenStatsDo.setExtraReason("debug it. contact developer");
+                                                tokenStatsDo.setPayload(finalPayload);
+                                            }
+                                            return tokenStatsDo;
+                                        })
+                                        .map(tokenStatsRepository::save));
                     } catch (final FirebaseMessagingException e) {
                         throw new RuntimeException(e);
                     }
                 })
-                .map(tokenStatsRepository::save)
                 .collectList()
                 .map(tokenStatsDOS -> tokenStatsDOS.size() == uUIDAndtokens.size() ? 1 : 0);
     }
