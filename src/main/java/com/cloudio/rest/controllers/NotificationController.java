@@ -12,6 +12,7 @@ import com.cloudio.rest.repository.TokenRepository;
 import com.cloudio.rest.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -50,7 +51,7 @@ public class NotificationController {
                           .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
                           .switchIfEmpty(Mono.error(new AccountNotExistException())));
       }*/
-    @PostMapping("/sendToAccount")
+    @PostMapping(value = "/sendToAccount", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId, @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> notificationService.sendAlertNotification(Collections.singletonList(notificationSendRequestDTO.getAccountId()), notificationSendRequestDTO.getData())
@@ -60,20 +61,20 @@ public class NotificationController {
                         .switchIfEmpty(Mono.error(new AccountNotExistException())));
     }
 
-    @PostMapping("/sendToGroup")
+    @PostMapping(value = "/sendToGroup", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId, @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
-                .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO,notificationSendRequestDTO.getData()))
+                .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData()))
                 .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
-    @PostMapping("/sendToCompany")
+    @PostMapping(value = "/sendToCompany", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId, @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .filter(accountDo -> accountDo.getCompanyId().equals(notificationSendRequestDTO.getCompanyId()))
-                .map(accountDO -> accountRepository.findByCompanyIdAndStatus(notificationSendRequestDTO.getCompanyId(),AccountStatus.ACTIVE)
+                .map(accountDO -> accountRepository.findByCompanyIdAndStatus(notificationSendRequestDTO.getCompanyId(), AccountStatus.ACTIVE)
                         .map(AccountDO::getAccountId)
                         .collectList()
                         .flatMapMany(accountIds -> notificationService.sendAlertNotification(accountIds, notificationSendRequestDTO.getData()))
