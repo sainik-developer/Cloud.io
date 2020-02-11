@@ -1,17 +1,18 @@
 package com.cloudio.rest.controllers;
 
-import com.cloudio.rest.dto.AccountDTO;
-import com.cloudio.rest.dto.FirebaseRefreshTokenDTO;
-import com.cloudio.rest.dto.InviteAccountDTO;
+import com.cloudio.rest.dto.*;
+import com.cloudio.rest.entity.TokenDO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.AccountProfileImageNotFoundException;
 import com.cloudio.rest.exception.FirebaseException;
 import com.cloudio.rest.exception.UnautherizedToInviteException;
 import com.cloudio.rest.mapper.AccountMapper;
+import com.cloudio.rest.mapper.FirebaseTokenMapper;
 import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.repository.AccountRepository;
+import com.cloudio.rest.repository.TokenRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.FirebaseService;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountController {
     private final AccountRepository accountRepository;
+    private final TokenRepository tokenRepository;
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
     private final FirebaseService firebaseService;
@@ -131,6 +133,22 @@ public class AccountController {
                 .flatMap(accountD -> accountRepository.updateByAccountId(accountId, AccountStatus.ACTIVE, AccountState.valueOf(state)))
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
+    }
+
+    @PostMapping(value = "/regToken", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseDTO> regToken(@RequestHeader("accountId") final String accountId,
+                                      @RequestBody TokenDTO tokenDTO) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .flatMap(accountDo -> tokenRepository.findByAccountId(accountDo.getAccountId())
+                        .map(tokenDo -> {
+                            FirebaseTokenMapper.INSTANCE.update(tokenDo, tokenDTO);
+                            return tokenDo;
+                        })
+                        .flatMap(tokenRepository::save)
+                        .switchIfEmpty(tokenRepository.save(TokenDO.builder().accountId(accountId).device(tokenDTO.getDevice()).token(tokenDTO.getToken()).build()))
+                )
+                .map(tokenDo -> ResponseDTO.builder().message("Token is registered successfully").build())
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
     @GetMapping("/refreshFirebaseToken")

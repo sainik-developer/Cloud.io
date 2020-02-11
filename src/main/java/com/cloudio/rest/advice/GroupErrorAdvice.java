@@ -29,6 +29,12 @@ public class GroupErrorAdvice {
         return new ResponseDTO(null, e.getMessage(), null);
     }
 
+    @ExceptionHandler(value = NotificationException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    public ResponseDTO notificationException(final Exception e) {
+        return new ResponseDTO(null, "error occurred with notification sending!", null);
+    }
+
     @ExceptionHandler(value = VerificationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ResponseDTO verificationException(final Exception e) {
