@@ -135,7 +135,7 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
-    @PostMapping("/regToken")
+    @PostMapping(value = "/regToken", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseDTO> regToken(@RequestHeader("accountId") final String accountId,
                                       @RequestBody TokenDTO tokenDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
