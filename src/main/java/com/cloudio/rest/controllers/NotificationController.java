@@ -67,7 +67,7 @@ public class NotificationController {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
                 .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData()))
-                .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
+                .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
@@ -82,7 +82,7 @@ public class NotificationController {
                         .collectList()
                         .map(integers -> integers.stream().anyMatch(integer -> integer == 1))
                 )
-                .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
+                .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
