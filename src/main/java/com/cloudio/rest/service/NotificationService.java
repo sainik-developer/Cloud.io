@@ -1,6 +1,5 @@
 package com.cloudio.rest.service;
 
-import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.entity.GroupDO;
 import com.cloudio.rest.exception.AccountNotExistException;
@@ -15,7 +14,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -37,10 +35,6 @@ public class NotificationService {
     private final CompanyRepository companyRepository;
     private final FirebaseService firebaseService;
     private final NotificationStatsService notificationStatsService;
-
-
-    @Value("${app.maxRingTime}")
-    private Integer maxRingTime;
 
 
     //    public Mono<Boolean> sendNotification(final String token, final Map<String, Object> data) {
