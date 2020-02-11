@@ -85,5 +85,4 @@ public class NotificationController {
                 .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
-
 }
