@@ -109,6 +109,6 @@ public class FirebaseService {
                     }
                 })
                 .collectList()
-                .map(tokenStatsDOS -> tokenStatsDOS.size() == uUIDAndtokens.size() ? 1 : 0);
+                .map(tokenStatsDos -> tokenStatsDos.size() == uUIDAndtokens.size() ? 1 : 0);
     }
 }

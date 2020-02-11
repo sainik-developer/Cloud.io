@@ -57,8 +57,9 @@ public class NotificationController {
                 .flatMap(accountDO -> notificationService.sendAlertNotification(Collections.singletonList(notificationSendRequestDTO.getAccountId()), notificationSendRequestDTO.getData())
                         .collectList()
                         .filter(integers -> integers.stream().anyMatch(integer -> integer == 1))
-                        .map(aBoolean -> ResponseDTO.builder().message("notification sent...").build())
-                        .switchIfEmpty(Mono.error(new AccountNotExistException())));
+                        .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
+                        .switchIfEmpty(Mono.error(new AccountNotExistException())))
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
     @PostMapping(value = "/sendToGroup", consumes = MediaType.APPLICATION_JSON_VALUE)
