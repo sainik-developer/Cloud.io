@@ -16,7 +16,6 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class AskFastAuthService {
-
     private final WebClient webClient;
 
     @Value("${askfast.base.url}")

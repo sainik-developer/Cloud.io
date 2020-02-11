@@ -54,7 +54,9 @@ public class NotificationController {
       }*/
     @PostMapping(value = "/sendToAccount", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId, @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
+        log.info("sendToAccount is called for {} and payload is {}", accountId, notificationSendRequestDTO);
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .doOnNext(accountDo -> log.info("account is found ACTIVE and details are {}", accountDo))
                 .flatMap(accountDO -> notificationService.sendAlertNotification(Collections.singletonList(notificationSendRequestDTO.getAccountId()), notificationSendRequestDTO.getData())
                         .collectList()
                         .filter(integers -> integers.stream().anyMatch(integer -> integer == 1))

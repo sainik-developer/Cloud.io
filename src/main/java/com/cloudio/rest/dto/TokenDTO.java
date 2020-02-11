@@ -1,6 +1,5 @@
 package com.cloudio.rest.dto;
 
-import com.cloudio.rest.validator.ValidTokenRequestPayload;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +13,6 @@ import javax.validation.constraints.Pattern;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ValidTokenRequestPayload
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TokenDTO {
     @NotBlank(message = "token can't be empty")

@@ -71,6 +71,7 @@ public class FirebaseService {
     }
 
     public Mono<Integer> sendNotification(final List<Pair<String, String>> uUIDAndtokens, final Map<String, String> data) {
+        log.info("FCM notification to be send.");
         String payload = null;
         try {
             payload = objectMapper.writeValueAsString(data);
@@ -85,6 +86,7 @@ public class FirebaseService {
                             .build();
                     try {
                         List<SendResponse> sendResponses = FirebaseMessaging.getInstance().sendMulticast(message).getResponses();
+                        log.info("res ponse from FCM {}", sendResponses);
                         return Flux.zip(Flux.fromIterable(uUIDAndtokens), Flux.fromIterable(sendResponses))
                                 .flatMap(objects -> tokenStatsRepository.findByNotificationId(objects.getT1().getKey())
                                         .map(tokenStatsDo -> {

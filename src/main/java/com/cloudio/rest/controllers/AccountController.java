@@ -136,8 +136,7 @@ public class AccountController {
     }
 
     @PostMapping(value = "/regToken", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Mono<ResponseDTO> regToken(@RequestHeader("accountId") final String accountId,
-                                      @RequestBody TokenDTO tokenDTO) {
+    public Mono<ResponseDTO> regToken(@RequestHeader("accountId") final String accountId, @Validated @RequestBody TokenDTO tokenDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDo -> tokenRepository.findByAccountId(accountDo.getAccountId())
                         .map(tokenDo -> {
