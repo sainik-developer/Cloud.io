@@ -4,6 +4,7 @@ import com.cloudio.rest.dto.NotificationSendRequestDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.exception.NotificationException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -58,7 +59,7 @@ public class NotificationController {
                         .collectList()
                         .filter(integers -> integers.stream().anyMatch(integer -> integer == 1))
                         .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
-                        .switchIfEmpty(Mono.error(new AccountNotExistException())))
+                        .switchIfEmpty(Mono.error(new NotificationException())))
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
