@@ -71,8 +71,8 @@ public class NotificationService {
                 .groupBy(Triple::getLeft)
                 .flatMap(osTypeTripleGroupedFlux -> osTypeTripleGroupedFlux.collectList()
                         .flatMap(triples ->
-                                osTypeTripleGroupedFlux.key() == OSType.ANDROID ? firebaseService.sendNotification(triples.stream().map(triple -> Pair.of(triple.getMiddle(), triple.getRight())).collect(Collectors.toList()), bodyData) :
-                                        apnService.sendAlertNotifications(triples.stream().map(triple -> Pair.of(triple.getMiddle(), triple.getRight())).collect(Collectors.toList()), bodyData))
+                                osTypeTripleGroupedFlux.key() == OSType.ANDROID ? firebaseService.sendNotification(triples.stream().map(triple -> Pair.of(triple.getRight(), triple.getMiddle())).collect(Collectors.toList()), bodyData) :
+                                        apnService.sendAlertNotifications(triples.stream().map(triple -> Pair.of(triple.getRight(), triple.getMiddle())).collect(Collectors.toList()), bodyData))
                 );
     }
 
