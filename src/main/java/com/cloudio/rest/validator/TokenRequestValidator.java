@@ -8,8 +8,8 @@ import javax.validation.ConstraintValidatorContext;
 
 public class TokenRequestValidator implements ConstraintValidator<ValidTokenRequestPayload, TokenDTO> {
     @Override
-    public boolean isValid(TokenDTO firebaseTokenDTO, ConstraintValidatorContext constraintValidatorContext) {
-        return !StringUtils.isEmpty(firebaseTokenDTO.getToken()) &&
-                (!firebaseTokenDTO.getDevice().equals("ios") || !StringUtils.isEmpty(firebaseTokenDTO.getVoipToken()));
+    public boolean isValid(TokenDTO tokenDto, ConstraintValidatorContext constraintValidatorContext) {
+        return !StringUtils.isEmpty(tokenDto.getToken()) &&
+                (!tokenDto.getDevice().equals("ios") || !StringUtils.isEmpty(tokenDto.getVoipToken()));
     }
 }

@@ -121,7 +121,8 @@ public class APNService {
                             tokenStatsDo.setStatus(apnsResponse.isAccepted() ? "DELIVERED" : apnsResponse.getRejectionReason());
                             tokenStatsDo.setPayload(apnsResponse.getPushNotification().getPayload());
                             return tokenStatsDo;
-                        }).flatMap(tokenStatsRepository::save)
+                        })
+                        .flatMap(tokenStatsRepository::save)
                         .map(tokenStatsDO -> apnsResponse.isAccepted()))
                 .doOnError(throwable -> {
                     log.info("alert apns is sent failed for accountId {} ", apnsToken);

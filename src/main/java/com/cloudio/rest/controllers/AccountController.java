@@ -1,6 +1,7 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.*;
+import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.entity.TokenDO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.AccountProfileImageNotFoundException;
@@ -16,6 +17,7 @@ import com.cloudio.rest.repository.TokenRepository;
 import com.cloudio.rest.service.AWSS3Services;
 import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.FirebaseService;
+import com.cloudio.rest.service.TwilioService;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class AccountController {
     private final AccountService accountService;
     private final AWSS3Services awss3Services;
     private final FirebaseService firebaseService;
+    private final TwilioService twilioService;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -163,5 +166,14 @@ public class AccountController {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(accountDo -> firebaseService.revokeFireBaseCustomToken(accountDo.getAccountId()))
                 .switchIfEmpty(Mono.error(FirebaseException::new));
+    }
+
+    @GetMapping("/twiliotoken")
+    public Mono<TwilioTokenResponseDTO> createTwilioClientCapabilityToken(@RequestHeader("accountId") final String accountId) {
+        return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
+                .map(AccountDO::getAccountId)
+                .flatMap(twilioService::generateTwilioClientCapabilityToken)
+                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+
     }
 }

@@ -24,6 +24,9 @@
         <lombok.version>1.18.10</lombok.version>
         <apache.common.version>3.9</apache.common.version>
         <maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
+        <twilio.version>7.42.0</twilio.version>
+        <pushy.version>0.13.10</pushy.version>
+        <pushy.netty.version>2.0.25.Final</pushy.netty.version>
         <!--java 8 support for maven-->
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -151,13 +154,19 @@
         <dependency>
             <groupId>com.turo</groupId>
             <artifactId>pushy</artifactId>
-            <version>0.13.10</version>
+            <version>${pushy.version}</version>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.25.Final</version>
+            <version>${pushy.netty.version}</version>
             <scope>runtime</scope>
+        </dependency>
+        <!--twilio sdk-->
+        <dependency>
+            <groupId>com.twilio.sdk</groupId>
+            <artifactId>twilio</artifactId>
+            <version>${twilio.version}</version>
         </dependency>
     </dependencies>
 
