@@ -32,7 +32,6 @@ public class FirebaseService {
     private final TokenStatsRepository tokenStatsRepository;
     private final ObjectMapper objectMapper;
 
-
     @Value("${amazonProperties.sensitive.bucketName}")
     private String bucketName;
     @Value("${amazonProperties.sensitive.fileName}")
@@ -105,7 +104,7 @@ public class FirebaseService {
                                             }
                                             return tokenStatsDo;
                                         })
-                                        .map(tokenStatsRepository::save));
+                                        .flatMap(tokenStatsRepository::save));
                     } catch (final FirebaseMessagingException e) {
                         throw new RuntimeException(e);
                     }
