@@ -82,7 +82,7 @@ public class FirebaseService {
         return Mono.just(uUIDAndtokens)
                 .flatMapMany(toks -> {
                     final MulticastMessage message = MulticastMessage.builder().putAllData(data).setAndroidConfig(AndroidConfig.builder()
-                            .setPriority(AndroidConfig.Priority.HIGH).build()).addAllTokens(toks.stream().map(Pair::getKey).collect(Collectors.toList()))
+                            .setPriority(AndroidConfig.Priority.HIGH).build()).addAllTokens(toks.stream().map(Pair::getValue).collect(Collectors.toList()))
                             .build();
                     try {
                         List<SendResponse> sendResponses = FirebaseMessaging.getInstance().sendMulticast(message).getResponses();
