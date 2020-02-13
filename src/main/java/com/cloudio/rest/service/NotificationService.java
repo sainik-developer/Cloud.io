@@ -67,6 +67,7 @@ public class NotificationService {
     }
 
     public Flux<Integer> sendAlertNotification(final List<String> accountIds, final Map<String, String> bodyData) {
+        System.out.println("\nBody data at NotificationService..."+bodyData);   //true
         return groupBy(accountIds, PushType.ALERT, "alert")
                 .groupBy(Triple::getLeft)
                 .flatMap(osTypeTripleGroupedFlux -> osTypeTripleGroupedFlux.collectList()
