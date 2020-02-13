@@ -86,7 +86,7 @@ public class FirebaseService {
                             .build();
                     try {
                         List<SendResponse> sendResponses = FirebaseMessaging.getInstance().sendMulticast(message).getResponses();
-                        log.info("res ponse from FCM {}", sendResponses);
+                        sendResponses.forEach(sendResponse -> log.info("response is {}", sendResponse));
                         return Flux.zip(Flux.fromIterable(uUIDAndtokens), Flux.fromIterable(sendResponses))
                                 .flatMap(objects -> tokenStatsRepository.findByNotificationId(objects.getT1().getKey())
                                         .map(tokenStatsDo -> {
