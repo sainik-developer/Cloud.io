@@ -9,7 +9,6 @@ import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,22 +24,31 @@ public class TwilioVoiceController {
     private CompanyRepository companyRepository;
     private AccountRepository accountRepository;
 
-//    @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
-//    public ResponseEntity<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
-//        log.info("INIT body from call is {}", twilioCallRequestDTO);
+    @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
+    public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
+        log.info("init body from call is {}", twilioCallRequestDTO);
+        return Mono.just(twilioCallRequestDTO)
+                .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client"))
+                .map(twilioCallRequestDto -> new VoiceResponse.Builder().say(new Say.Builder("One to one call for transfer is not yet implemented").build()).reject(new Reject.Builder().reason(Reject.Reason.REJECTED).build()).build())
+                .map(VoiceResponse::toXml)
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));
+
+
+//        Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml())
+//                .map(s -> )
 //        final VoiceResponse wrongResponse = new VoiceResponse.Builder().say(new Say.Builder("You are calling from wrong number").build()).reject(new Reject.Builder().reason(Reject.Reason.REJECTED).build()).build();
 //        try {
 //            if (twilioCallRequestDTO.getFrom().startsWith("client")) {
 //                //TODO call to client for one to one VOIP call
 //            } else {
-//                return ResponseEntity.ok(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml());
+//                return ResponseEntity.ok();
 //            }
 //        } catch (final Exception e) {
 //            log.error("error in formatting the from phone number, either it's not from real phone number, may be browser call. prohibited to accept the incoming call other than phone number due to avoid misuse of api ");
 //            return ResponseEntity.ok(wrongResponse.toXml());
 //            // TODO play a message and terminate the call
 //        }
-//    }
+    }
 
     @PostMapping(value = "/dtmf", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleDTMFEntry(final TwilioCallRequestDTO twilioCallRequestDTO) {
