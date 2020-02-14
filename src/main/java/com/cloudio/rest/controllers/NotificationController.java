@@ -11,6 +11,7 @@ import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.GroupRepository;
 import com.cloudio.rest.repository.TokenRepository;
 import com.cloudio.rest.service.NotificationService;
+import com.cloudio.rest.validator.ValidationMarker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
@@ -53,8 +54,9 @@ public class NotificationController {
                           .switchIfEmpty(Mono.error(new AccountNotExistException())));
       }*/
     @PostMapping(value = "/sendToAccount", consumes = MediaType.APPLICATION_JSON_VALUE)
-    Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId, @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
-        log.info("sendToAccount is called for {} and payload is {}", accountId, notificationSendRequestDTO);
+    Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId,
+                                    @Validated(ValidationMarker.AccountIDMandatoryMarker.class)
+                                    @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("account is found ACTIVE and details are {}", accountDo))
                 .flatMap(accountDO -> notificationService.sendAlertNotification(Collections.singletonList(notificationSendRequestDTO.getAccountId()), notificationSendRequestDTO.getData())
@@ -66,7 +68,10 @@ public class NotificationController {
     }
 
     @PostMapping(value = "/sendToGroup", consumes = MediaType.APPLICATION_JSON_VALUE)
-    Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId, @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
+    Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId,
+                                  @Validated(ValidationMarker.GroupIDMandatoryMarker.class)
+                                  @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
+
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
                 .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData()))
@@ -75,7 +80,10 @@ public class NotificationController {
     }
 
     @PostMapping(value = "/sendToCompany", consumes = MediaType.APPLICATION_JSON_VALUE)
-    Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId, @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
+    Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId,
+                                   @Validated(ValidationMarker.CompanyIDMandatoryMarker.class)
+                                   @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
+
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .filter(accountDo -> accountDo.getCompanyId().equals(notificationSendRequestDTO.getCompanyId()))
                 .map(accountDO -> accountRepository.findByCompanyIdAndStatus(notificationSendRequestDTO.getCompanyId(), AccountStatus.ACTIVE)
