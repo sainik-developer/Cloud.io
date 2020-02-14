@@ -59,6 +59,7 @@ public class NotificationController {
                                     @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("account is found ACTIVE and details are {}", accountDo))
+                .flatMap(accountDO -> accountRepository.findByAccountId(notificationSendRequestDTO.getAccountId()))
                 .flatMap(accountDO -> notificationService.sendAlertNotification(Collections.singletonList(notificationSendRequestDTO.getAccountId()), notificationSendRequestDTO.getData())
                         .collectList()
                         .filter(integers -> integers.stream().anyMatch(integer -> integer == 1))
