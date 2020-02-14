@@ -1,30 +1,42 @@
 package com.cloudio.rest.service;
 
 import com.cloudio.rest.dto.TwilioTokenResponseDTO;
-import com.twilio.jwt.client.ClientCapability;
-import com.twilio.jwt.client.IncomingClientScope;
+import com.twilio.jwt.accesstoken.AccessToken;
+import com.twilio.jwt.accesstoken.VoiceGrant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
-
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class TwilioService {
-    @Value("${twilio.accountSID}")
+    @Value("${twilio.account.sid}")
     private String ACCOUNT_SID;
-    @Value("${twilio.accessTokenSecret}")
+    @Value("${twilio.account.authtoken}")
     private String AUTH_TOKEN;
+    @Value("${twilio.api_key}")
+    private String TWILIO_API_KEY;
+    @Value("${twilio.api_secret}")
+    private String TWILIO_API_SECRET;
+    @Value("${twilio.accessToken.ttl.sec}")
+    private Integer ACCESS_TOKEN_TTL;
+    @Value("${twilio.applicationSID}")
+    private String APPLICATION_ID;
+    @Value("${twilio.push.credential.fcm.id}")
+    private String fcmPushId;
+    @Value("${twilio.push.credential.apn.id}")
+    private String apnPushId;
 
-    public Mono<TwilioTokenResponseDTO> generateTwilioClientCapabilityToken(final String accountId) {
-        return Mono.fromSupplier(() -> new ClientCapability.Builder(ACCOUNT_SID, AUTH_TOKEN)
-                .scopes(Collections.singletonList(new IncomingClientScope(accountId)))
+    public Mono<TwilioTokenResponseDTO> generateTwilioAccessToken(final String accountId, final String deviceType) {
+        return Mono.fromSupplier(() -> new AccessToken.Builder(ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET)
+                .identity(accountId)
+                .grant(new VoiceGrant().setIncomingAllow(true).setOutgoingApplicationSid(APPLICATION_ID).setPushCredentialSid(deviceType.equals("ios") ? apnPushId : fcmPushId))
+                .ttl(ACCESS_TOKEN_TTL)
                 .build())
-                .map(ClientCapability::toJwt)
+                .map(AccessToken::toJwt)
                 .map(capabilityToken -> TwilioTokenResponseDTO.builder().clientCapabilityToken(capabilityToken).build());
     }
 }

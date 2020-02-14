@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-
     private final AuthService authService;
 
     @GetMapping("/signup/{phoneNumber}")

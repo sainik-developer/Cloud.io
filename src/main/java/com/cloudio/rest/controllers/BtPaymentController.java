@@ -19,7 +19,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/payment")
 @RequiredArgsConstructor
 public class BtPaymentController {
-
     private final PaymentService paymentService;
     private final AccountRepository accountRepository;
 

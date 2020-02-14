@@ -112,4 +112,10 @@ public class GroupErrorAdvice {
     public ResponseDTO firebaseException(final Exception e) {
         return new ResponseDTO(1032, "This operation is not possible", null);
     }
+
+    @ExceptionHandler(value = TokenMissingException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO tokenMissingException(final Exception e) {
+        return new ResponseDTO(1032, "Account has not registered FCM or APN token yet", null);
+    }
 }
