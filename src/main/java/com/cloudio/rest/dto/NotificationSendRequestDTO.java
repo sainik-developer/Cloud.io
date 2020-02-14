@@ -16,9 +16,9 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NotificationSendRequestDTO {
-    @NotBlank(groups = {ValidationMarker.AccountIdValidateMarker.class},message = "AccountId can't be empty or blank!")
+    @NotBlank(groups = {ValidationMarker.AccountIDMandatoryMarker.class},message = "AccountId can't be empty or blank!")
     private String accountId;
-    @NotBlank(groups = {ValidationMarker.CompanyIdMarker.class},message = "CompanyId can't be empty or blank!")
+    @NotBlank(groups = {ValidationMarker.CompanyIDMandatoryMarker.class},message = "CompanyId can't be empty or blank!")
     private String companyId;
     @NotBlank(groups = {ValidationMarker.GroupIDMandatoryMarker.class},message = "GroupId can't be empty or blank!")
     private String groupId;

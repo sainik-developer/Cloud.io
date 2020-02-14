@@ -55,7 +55,7 @@ public class NotificationController {
       }*/
     @PostMapping(value = "/sendToAccount", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId,
-                                    @Validated(ValidationMarker.AccountIdValidateMarker.class)
+                                    @Validated(ValidationMarker.AccountIDMandatoryMarker.class)
                                     @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("account is found ACTIVE and details are {}", accountDo))
@@ -81,7 +81,7 @@ public class NotificationController {
 
     @PostMapping(value = "/sendToCompany", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId,
-                                   @Validated(ValidationMarker.CompanyIdMarker.class)
+                                   @Validated(ValidationMarker.CompanyIDMandatoryMarker.class)
                                    @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
 
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
