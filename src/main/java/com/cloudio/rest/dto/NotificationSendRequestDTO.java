@@ -1,6 +1,6 @@
 package com.cloudio.rest.dto;
 
-import com.cloudio.rest.validator.NotificationValidator;
+import com.cloudio.rest.validator.ValidationMarker;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import java.util.Map;
 
 @Data
@@ -17,15 +16,12 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NotificationSendRequestDTO {
-    @NotBlank(groups = {NotificationValidator.AccountIdValidate.class},message = "AccountId can't be blank!")
-    @NotEmpty(groups = {NotificationValidator.AccountIdValidate.class},message = "AccountId can't be empty!")
+    @NotBlank(groups = {ValidationMarker.AccountIdValidateMarker.class},message = "AccountId can't be empty or blank!")
     private String accountId;
-    @NotBlank(groups = {NotificationValidator.CompanyIdValidate.class},message = "CompanyId can't be blank!")
-    @NotEmpty(groups = {NotificationValidator.CompanyIdValidate.class},message = "CompanyId can't be empty!")
+    @NotBlank(groups = {ValidationMarker.CompanyIdMarker.class},message = "CompanyId can't be empty or blank!")
     private String companyId;
-    @NotBlank(groups = {NotificationValidator.GroupIdValidate.class},message = "GroupId can't be blank!")
-    @NotEmpty(groups = {NotificationValidator.GroupIdValidate.class},message = "GroupId can't be empty!")
+    @NotBlank(groups = {ValidationMarker.GroupIDMandatoryMarker.class},message = "GroupId can't be empty or blank!")
     private String groupId;
-    @NotEmpty(message = "data can't be empty")
+    @NotBlank(message = "data can't be empty or blank!")
     private Map<String, String> data;
 }

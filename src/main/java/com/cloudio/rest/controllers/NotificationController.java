@@ -4,13 +4,14 @@ import com.cloudio.rest.dto.NotificationSendRequestDTO;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.exception.NotificationException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.GroupRepository;
 import com.cloudio.rest.repository.TokenRepository;
 import com.cloudio.rest.service.NotificationService;
-import com.cloudio.rest.validator.NotificationValidator;
+import com.cloudio.rest.validator.ValidationMarker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
@@ -54,7 +55,7 @@ public class NotificationController {
       }*/
     @PostMapping(value = "/sendToAccount", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToAccount(@RequestHeader("accountId") final String accountId,
-                                    @Validated(NotificationValidator.AccountIdValidate.class)
+                                    @Validated(ValidationMarker.AccountIdValidateMarker.class)
                                     @RequestBody final NotificationSendRequestDTO notificationSendRequestDTO) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .doOnNext(accountDo -> log.info("account is found ACTIVE and details are {}", accountDo))
@@ -62,13 +63,13 @@ public class NotificationController {
                         .collectList()
                         .filter(integers -> integers.stream().anyMatch(integer -> integer == 1))
                         .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
-                        .switchIfEmpty(Mono.error(new AccountNotExistException())))
+                        .switchIfEmpty(Mono.error(new NotificationException())))
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
     @PostMapping(value = "/sendToGroup", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId,
-                                  @Validated(NotificationValidator.GroupIdValidate.class)
+                                  @Validated(ValidationMarker.GroupIDMandatoryMarker.class)
                                   @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
 
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
@@ -80,7 +81,7 @@ public class NotificationController {
 
     @PostMapping(value = "/sendToCompany", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId,
-                                   @Validated(NotificationValidator.CompanyIdValidate.class)
+                                   @Validated(ValidationMarker.CompanyIdMarker.class)
                                    @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
 
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)

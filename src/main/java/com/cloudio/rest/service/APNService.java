@@ -95,10 +95,6 @@ public class APNService {
 
 
     public Mono<Integer> sendAlertNotifications(final List<Pair<String, String>> uUIDAndtokens, final Map<String, String> data) {
-
-        for(Pair<String,String> p :uUIDAndtokens)
-            System.out.println("UUID & Token ::: "+p);
-
         return Flux.fromIterable(uUIDAndtokens)
                 .flatMap(uUIDAndtoken -> this.sendAlertNotification(uUIDAndtoken.getRight(), data, UUID.fromString(uUIDAndtoken.getLeft())))
                 .collectList()
@@ -106,7 +102,6 @@ public class APNService {
     }
 
     public Mono<Boolean> sendAlertNotification(final String apnsToken, final Map<String, String> data, final UUID notificationId) {
-        System.out.println("Not id :::"+notificationId);
         return Mono.create((Consumer<MonoSink<PushNotificationResponse<SimpleApnsPushNotification>>>) monoSink -> {
             final PushNotificationFuture<SimpleApnsPushNotification, PushNotificationResponse<SimpleApnsPushNotification>> sendNotificationFuture =
                     apnsClient.sendNotification(new SimpleApnsPushNotification(TokenUtil.sanitizeTokenString(apnsToken), apnsALERTTopic,
