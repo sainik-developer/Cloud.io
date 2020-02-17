@@ -37,7 +37,7 @@ public class TwilioVoiceController {
     @PostMapping(value = "/dtmf", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleDTMFEntry(final TwilioCallRequestDTO twilioCallRequestDTO) {
         log.info("/dtmf is called {}", twilioCallRequestDTO);
-        return companyRepository.findByAdapterNumber("+x" + twilioCallRequestDTO.getTo() + "," + twilioCallRequestDTO.getDigits() + "*")
+        return companyRepository.findByAdapterNumber("+" + twilioCallRequestDTO.getTo() + "," + twilioCallRequestDTO.getDigits() + "*")
                 .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
                 .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatus(companyDo.getCompanyId(), AccountStatus.ACTIVE)
                         .doOnNext(accountDo -> log.info(""))
