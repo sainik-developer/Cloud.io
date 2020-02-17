@@ -4,6 +4,7 @@ import com.cloudio.rest.dto.TwilioCallRequestDTO;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
+import com.cloudio.rest.service.TwilioService;
 import com.twilio.twiml.VoiceResponse;
 import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import reactor.core.publisher.Mono;
 public class TwilioVoiceController {
     private final CompanyRepository companyRepository;
     private final AccountRepository accountRepository;
+    private final TwilioService twilioService;
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -42,7 +44,7 @@ public class TwilioVoiceController {
                 .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
                 .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatus(companyDo.getCompanyId(), AccountStatus.ACTIVE)
                         .doOnNext(accountDo -> log.info(""))
-                        .map(accountDo -> new Client.Builder().identity(accountDo.getAccountId()).build())
+                        .map(accountDo -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountDo.getAccountId())).build())
                         .doOnNext(client -> log.info(""))
                         .collectList()
                         .doOnNext(clients -> log.info("total number if client are {}", clients.size()))

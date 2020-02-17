@@ -47,7 +47,7 @@ public class TwilioService {
      * @param accountId
      * @return
      */
-    private String createTwilioCompatibleClientId(final String accountId) {
+    public String createTwilioCompatibleClientId(final String accountId) {
         if (StringUtils.isEmpty(accountId)) {
             throw new NullPointerException();
         }
