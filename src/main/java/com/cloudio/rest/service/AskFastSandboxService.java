@@ -12,24 +12,4 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Profile(value = {"sandbox", "local"})
 public class AskFastSandboxService implements AskFastService {
-
-    @Value("${askfast.base.url}")
-    private String BASE_URL;
-
-    @Value("${askfast.auth.url}")
-    private String AUTH_URL;
-
-    @Value("${askfast.start.dialog.url}")
-    private String START_DIALOG_URL;
-
-    @Value("${askfast.root.accountId}")
-    private String ROOT_ACCOUNT_ID;
-
-    @Value("${askfast.root.refreshToken}")
-    private String ROOT_REFRESH_TOKEN;
-
-
-    public Mono<Boolean> doAuthAndSendSMS(final String phoneNumber, final String smsContent) {
-        return Mono.just(true);
-    }
 }
