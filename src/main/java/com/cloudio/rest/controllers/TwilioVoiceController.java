@@ -21,8 +21,8 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @RequestMapping("/twilio/voice")
 public class TwilioVoiceController {
-    private CompanyRepository companyRepository;
-    private AccountRepository accountRepository;
+    private final CompanyRepository companyRepository;
+    private final AccountRepository accountRepository;
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -37,7 +37,7 @@ public class TwilioVoiceController {
     @PostMapping(value = "/dtmf", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleDTMFEntry(final TwilioCallRequestDTO twilioCallRequestDTO) {
         log.info("/dtmf is called {}", twilioCallRequestDTO);
-        return companyRepository.findByAdapterNumber(twilioCallRequestDTO.getTo() + "," + twilioCallRequestDTO.getDigits() + "*")
+        return companyRepository.findByAdapterNumber("+x" + twilioCallRequestDTO.getTo() + "," + twilioCallRequestDTO.getDigits() + "*")
                 .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
                 .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatus(companyDo.getCompanyId(), AccountStatus.ACTIVE)
                         .doOnNext(accountDo -> log.info(""))
