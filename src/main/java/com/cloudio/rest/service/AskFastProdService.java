@@ -32,9 +32,6 @@ public class AskFastProdService implements AskFastService {
 
     @Value("${askfast.subaccount.url}")
     private String SUBACCOUNT_CREATE_URL;
-/*
-    @Value("${askfast.subaccount.impersonate.url}")
-    private String SUBACCOUNT_IMPERSONATE_URL;*/
 
     @Value("${askfast.subaccount.fetchkey.url}")
     private String KEY_URL;
@@ -55,13 +52,6 @@ public class AskFastProdService implements AskFastService {
                 .map(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
                 .doOnError(throwable -> log.error("error while sending sms {}", throwable.getMessage()));
     }
-
-   /* public Mono<Boolean> sendEmail(final String toEmailAddress, final String emailContent, final String accessToken) {
-        return sendAdapterRequest(toEmailAddress, emailContent, AskfastAdapterRequestDTO.AdapterType.EMAIL, accessToken)
-                .doOnNext(aBoolean -> log.info("Email is sent successfully"))
-                .map(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
-                .doOnError(throwable -> log.error("error while sending email {}", throwable.getMessage()));
-    }*/
 
     private Mono<ClientResponse> sendAdapterRequest(final String toAddress,
                                                     final String content,
@@ -84,11 +74,6 @@ public class AskFastProdService implements AskFastService {
         return getRootAuthToken()
                 .flatMap(s -> sendSms(phoneNumber, smsContent, s));
     }
-
-   /* public Mono<Boolean> doAuthAndSendEmail(final String toEmailAddress, final String emailContent) {
-        return getRootAuthToken()
-                .flatMap(s -> sendEmail(toEmailAddress, emailContent, s));
-    }*/
 
 //    public Mono<AskfastDetail> createMemberAccount(final AccountDO memberAccountDO, final AccountDO adminAccountDO, final String companyName) {
 //        log.info("Member account is going to be created on ask-fast platform");

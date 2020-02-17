@@ -25,9 +25,6 @@ public class AskFastSandboxService implements AskFastService {
     @Value("${askfast.subaccount.url}")
     private String SUBACCOUNT_CREATE_URL;
 
-   /* @Value("${askfast.subaccount.impersonate.url}")
-    private String SUBACCOUNT_IMPERSONATE_URL;*/
-
     @Value("${askfast.subaccount.fetchkey.url}")
     private String KEY_URL;
 
@@ -41,8 +38,4 @@ public class AskFastSandboxService implements AskFastService {
     public Mono<Boolean> doAuthAndSendSMS(final String phoneNumber, final String smsContent) {
         return Mono.just(true);
     }
-
-   /* public Mono<Boolean> doAuthAndSendEmail(final String toEmailAddress, final String emailContent) {
-        return Mono.just(true);
-    }*/
 }
