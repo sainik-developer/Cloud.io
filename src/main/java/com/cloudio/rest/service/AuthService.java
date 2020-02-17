@@ -169,10 +169,6 @@ public class AuthService {
         }
     }
 
-   /* private String generateSMSCode() {
-        return String.valueOf((int) Math.floor(100000 + Math.random() * 900000));
-    }*/
-
     public Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
         return accountRepository.findByPhoneNumber(phoneNumber)
                 .map(AccountDO::getCompanyId)
