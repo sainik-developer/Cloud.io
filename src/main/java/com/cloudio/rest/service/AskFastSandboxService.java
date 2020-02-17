@@ -22,9 +22,6 @@ public class AskFastSandboxService implements AskFastService {
     @Value("${askfast.start.dialog.url}")
     private String START_DIALOG_URL;
 
-    @Value("${askfast.subaccount.url}")
-    private String SUBACCOUNT_CREATE_URL;
-
     @Value("${askfast.root.accountId}")
     private String ROOT_ACCOUNT_ID;
 
