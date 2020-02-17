@@ -9,6 +9,7 @@ import com.cloudio.rest.exception.InvalidTempTokenException;
 import com.cloudio.rest.exception.SignInException;
 import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.pojo.AccountStatus;
+import com.cloudio.rest.pojo.OTPGenerator;
 import com.cloudio.rest.pojo.TempAuthToken;
 import com.cloudio.rest.repository.AccessTokenRepository;
 import com.cloudio.rest.repository.AccountRepository;
@@ -41,6 +42,7 @@ public class AuthService {
     private final AccessTokenRepository accessTokenRepository;
     private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
+    private final OTPGenerator otpGenerator;
 
     @Value("${cloudio.signup.maxRetry}")
     private Integer maxRetry;
@@ -59,7 +61,7 @@ public class AuthService {
                         throw new SignInException("Phone number is locked. You cannot receive code anymore. Please try after sometime.");
                     }
                     signInDetailDo.increaseRetries(maxRetry);
-                    signInDetailDo.setSmsCode(generateSMSCode());
+                    signInDetailDo.setSmsCode(otpGenerator.generateSMSCode());
                     return signInDetailDo;
                 })
                 .flatMap(signInCodeRepository::save)
@@ -67,7 +69,7 @@ public class AuthService {
                         .filter(Boolean::booleanValue)
                         .map(aBoolean -> "Sms is sent where retry count is " + signInDetailDo.getRetry())
                         .switchIfEmpty(Mono.just("Something went wrong with sending SMS,Please try after sometime.")))
-                .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(generateSMSCode()).build())
+                .switchIfEmpty(Mono.just(SignInDetailDO.builder().phoneNumber(getFormattedNumber(phoneNumber)).retry(1).smsCode(otpGenerator.generateSMSCode()).build())
                         .doOnNext(signInDetailDo -> log.info("Number had arrived for first time to sign up {}", signInDetailDo.getPhoneNumber()))
                         .flatMap(signInCodeRepository::save)
                         .flatMap(signInDetailDo -> askFastService.doAuthAndSendSMS(signInDetailDo.getPhoneNumber(), "Your verification code is " + signInDetailDo.getSmsCode())
@@ -167,9 +169,9 @@ public class AuthService {
         }
     }
 
-    private String generateSMSCode() {
+   /* private String generateSMSCode() {
         return String.valueOf((int) Math.floor(100000 + Math.random() * 900000));
-    }
+    }*/
 
     public Flux<CompanyDO> retrieveAllAssociatedCompanyDetails(final String phoneNumber) {
         return accountRepository.findByPhoneNumber(phoneNumber)
