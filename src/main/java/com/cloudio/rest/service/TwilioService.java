@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 @Log4j2
@@ -32,11 +33,24 @@ public class TwilioService {
 
     public Mono<TwilioTokenResponseDTO> generateTwilioAccessToken(final String accountId, final String deviceType) {
         return Mono.fromSupplier(() -> new AccessToken.Builder(ACCOUNT_SID, TWILIO_API_KEY, TWILIO_API_SECRET)
-                .identity(accountId)
+                .identity(createTwilioCompatibleClientId(accountId))
                 .grant(new VoiceGrant().setIncomingAllow(true).setOutgoingApplicationSid(APPLICATION_ID).setPushCredentialSid(deviceType.equals("ios") ? apnPushId : fcmPushId))
                 .ttl(ACCESS_TOKEN_TTL)
                 .build())
                 .map(AccessToken::toJwt)
                 .map(capabilityToken -> TwilioTokenResponseDTO.builder().clientCapabilityToken(capabilityToken).build());
+    }
+
+    /***
+     * https://www.twilio.com/docs/voice/twiml/client
+     * The client identifier currently may only contain alpha-numeric and underscore characters.
+     * @param accountId
+     * @return
+     */
+    private String createTwilioCompatibleClientId(final String accountId) {
+        if (StringUtils.isEmpty(accountId)) {
+            throw new NullPointerException();
+        }
+        return accountId.replaceAll("-", "_").replaceAll(":", "_");
     }
 }
