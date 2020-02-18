@@ -1,6 +1,7 @@
 package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
+import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -11,10 +12,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import javax.validation.constraints.NotEmpty;
 
 @Log4j2
 @Validated
@@ -25,6 +26,7 @@ public class TwilioVoiceController {
     private final CompanyRepository companyRepository;
     private final AccountRepository accountRepository;
     private final TwilioService twilioService;
+
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -56,5 +58,24 @@ public class TwilioVoiceController {
                         .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                         .map(VoiceResponse::toXml))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Adapter Number is not found").build()).build().toXml()));
+    }
+
+    @PostMapping(value = "/hold", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<String> handleHold(@RequestHeader("accountId") final String fromAccountId,
+                                   @NotEmpty @RequestParam("callSid") final String callSid) {
+        return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
+                .flatMap(accountDo -> twilioService.holdIncomingCallToAdapter(fromAccountId, callSid))
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
+    }
+
+    @PostMapping(value = "/transfer", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<String> handleTransfer(@RequestHeader("accountId") final String fromAccountId,
+                                       @NotEmpty @RequestParam("callSid") final String callSid,
+                                       @NotEmpty @RequestParam("toAccount") final String toAccount) {
+        return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
+                .flatMap(fromAccountDo -> accountRepository.findByAccountIdAndStatus(toAccount, AccountStatus.ACTIVE)
+                        .filter(toAccountDo -> fromAccountDo.getCompanyId().equals(toAccountDo.getCompanyId()))
+                        .flatMap(toAccountDo -> twilioService.transferCall(fromAccountId, callSid, toAccount)))
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 }

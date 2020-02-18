@@ -48,7 +48,6 @@ public class NotificationController {
     Mono<ResponseDTO> sendToGroup(@RequestHeader("accountId") final String accountId,
                                   @Validated(ValidationMarker.GroupIDMandatoryMarker.class)
                                   @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
-
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
                 .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData(), accountId))
