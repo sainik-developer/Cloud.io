@@ -75,7 +75,7 @@ public class TwilioVoiceController {
         return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
                 .flatMap(fromAccountDo -> accountRepository.findByAccountIdAndStatus(toAccount, AccountStatus.ACTIVE)
                         .filter(toAccountDo -> fromAccountDo.getCompanyId().equals(toAccountDo.getCompanyId()))
-                        .flatMap(toAccountDo -> twilioService.transferCall(fromAccountId, callSid, toAccount)))
+                        .flatMap(toAccountDo -> twilioService.transferCall(callSid, toAccount)))
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 }

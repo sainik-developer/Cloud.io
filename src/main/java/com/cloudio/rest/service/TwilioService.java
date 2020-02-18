@@ -41,6 +41,8 @@ public class TwilioService {
     private String fcmPushId;
     @Value("${twilio.push.credential.apn.id}")
     private String apnPushId;
+    @Value("${twilio.waiting.audio.url}")
+    private String WAITING_AUDIO_URL;
 
     @PostConstruct
     void initTwilioSdk() {
@@ -79,10 +81,10 @@ public class TwilioService {
     }
 
     private String prepareCallHoldingTwilioResponse() {
-        return new VoiceResponse.Builder().say(new Say.Builder("Please wait for the call, it will be transferred to person who will resolve the issue").build()).play(new Play.Builder("http://demo.twilio.com/docs/classic.mp3").loop(100).build()).build().toXml();
+        return new VoiceResponse.Builder().say(new Say.Builder("Please wait for the call, it will be transferred to person who will resolve the issue").build()).play(new Play.Builder(WAITING_AUDIO_URL).loop(100).build()).build().toXml();
     }
 
-    public Mono<String> transferCall(final String fromAccount, final String callSid, final String toAccountId) {
+    public Mono<String> transferCall(final String callSid, final String toAccountId) {
         return Mono.fromSupplier(() -> Call.updater(ACCOUNT_SID, callSid).setTwiml(prepareCallTransferResponse(toAccountId)).update())
                 .filter(call -> call.getTo().equals("client" + createTwilioCompatibleClientId(toAccountId)))
                 .map(call -> "")
