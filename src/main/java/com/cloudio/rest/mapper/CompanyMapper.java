@@ -13,6 +13,5 @@ public interface CompanyMapper {
     @Mapping(source = "adapterNumber",target="adapterNumber",defaultValue = "NO VALID ADAPTER")
     CompanyDTO toDTO(CompanyDO companyDO);
 
-    @Mapping(source = "adapterNumber",target="adapterNumber",defaultValue = "NO VALID ADAPTER")
     CompanyDO fromDTO(CompanyDTO companyDTO);
 }
