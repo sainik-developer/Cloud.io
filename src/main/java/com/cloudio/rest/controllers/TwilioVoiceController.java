@@ -66,7 +66,7 @@ public class TwilioVoiceController {
                                         @NotEmpty @RequestParam("callSid") final String callSid) {
         return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
                 .flatMap(accountDo -> twilioService.holdIncomingCallToAdapter(fromAccountId, callSid))
-                .map(s -> ResponseDTO.builder().message(s).build())
+                .map(s -> ResponseDTO.builder().data(s).build())
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
@@ -75,10 +75,14 @@ public class TwilioVoiceController {
                                             @NotEmpty @RequestParam("callSid") final String callSid,
                                             @NotEmpty @RequestParam("toAccount") final String toAccount) {
         return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
+                .doOnNext(accountDo -> log.info("from account Id found and ACTIVE and details are {}", accountDo))
                 .flatMap(fromAccountDo -> accountRepository.findByAccountIdAndStatus(toAccount, AccountStatus.ACTIVE)
+                        .doOnNext(accountDo -> log.info("to account Id found and details are {}", accountDo))
                         .filter(toAccountDo -> fromAccountDo.getCompanyId().equals(toAccountDo.getCompanyId()))
+                        .doOnNext(accountDo -> log.info("both are part of same company, where company Id is {}", accountDo.getCompanyId()))
                         .flatMap(toAccountDo -> twilioService.transferCall(callSid, toAccount))
-                        .map(s -> ResponseDTO.builder().message(s).build()))
+                        .doOnNext(newCallSid -> log.info("call is transferred successfully where new call sid is {}", newCallSid))
+                        .map(newCallSid -> ResponseDTO.builder().data(newCallSid).build()))
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 }
