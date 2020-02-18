@@ -25,7 +25,7 @@ public class CompanyDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private CompanyStatus companyStatus;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String adapterNumber = "088-123 45 68";
+    private String adapterNumber = "NO VALID ADAPTER";
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<GroupDTO> groups;
 }
