@@ -33,9 +33,6 @@ public class AskFastProdService implements AskFastService {
     @Value("${askfast.subaccount.url}")
     private String SUBACCOUNT_CREATE_URL;
 
-   /* @Value("${askfast.subaccount.impersonate.url}")
-    private String SUBACCOUNT_IMPERSONATE_URL;*/
-
     @Value("${askfast.subaccount.fetchkey.url}")
     private String KEY_URL;
 
