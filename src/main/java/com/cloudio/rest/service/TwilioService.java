@@ -79,7 +79,7 @@ public class TwilioService {
                 .filter(call -> ("client:" + createTwilioCompatibleClientId(fromAccount)).equals(call.getTo()))
                 .map(call -> Call.updater(ACCOUNT_SID, call.getParentCallSid()).setTwiml(prepareCallHoldingTwilioResponse()).update())
                 .doOnNext(call -> log.info("hold request update details are {}", call))
-                .map(Call::getParentCallSid)
+                .map(Call::getSid)
                 .switchIfEmpty(Mono.error(HoldingNotAllowedException::new));
     }
 
@@ -89,6 +89,7 @@ public class TwilioService {
 
     public Mono<String> transferCall(final String callSid, final String toAccountId) {
         return Mono.fromSupplier(() -> Call.updater(ACCOUNT_SID, callSid).setTwiml(prepareCallTransferResponse(toAccountId)).update())
+                .doOnNext(call -> log.info("call is transferred successfully and details are {}", call))
                 .filter(call -> call.getTo().equals("client" + createTwilioCompatibleClientId(toAccountId)))
                 .map(Call::getSid)
                 .switchIfEmpty(Mono.error(CallTransferFailedException::new));
