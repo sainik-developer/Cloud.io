@@ -10,8 +10,9 @@ public interface CompanyMapper {
 
     CompanyMapper INSTANCE = Mappers.getMapper(CompanyMapper.class);
 
+    @Mapping(source = "adapterNumber",target="adapterNumber",defaultValue = "NO VALID ADAPTER")
     CompanyDTO toDTO(CompanyDO companyDO);
 
-    @Mapping(source = "adapterNumber",target="adapterNumber",nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.SET_TO_DEFAULT)
+    @Mapping(source = "adapterNumber",target="adapterNumber",defaultValue = "NO VALID ADAPTER")
     CompanyDO fromDTO(CompanyDTO companyDTO);
 }
