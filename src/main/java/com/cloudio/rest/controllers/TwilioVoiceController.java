@@ -27,7 +27,6 @@ public class TwilioVoiceController {
     private final AccountRepository accountRepository;
     private final TwilioService twilioService;
 
-
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
         log.info("init body from call is {}", twilioCallRequestDTO);

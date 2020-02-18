@@ -74,6 +74,7 @@ public class TwilioService {
 
     public Mono<String> holdIncomingCallToAdapter(final String fromAccount, final String callSid) {
         return Mono.fromSupplier(() -> Call.fetcher(ACCOUNT_SID, callSid).fetch())
+                .doOnNext(call -> log.info("fetched call details are {}", call.toString()))
                 .map(Call::getTo)
                 .filter(toCallId -> ("client:" + createTwilioCompatibleClientId(fromAccount)).equals(toCallId))
                 .map(toCallId -> prepareCallHoldingTwilioResponse())
