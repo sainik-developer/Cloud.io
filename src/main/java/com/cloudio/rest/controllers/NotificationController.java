@@ -51,15 +51,15 @@ public class NotificationController {
 
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .flatMap(accountDO -> groupRepository.findByGroupId(notificationSendRequestDTO.getGroupId()))
-                .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData()))
+                .flatMap(groupDO -> notificationService.sendNotificationToGroup(groupDO, notificationSendRequestDTO.getData(), accountId))
                 .map(aBoolean -> ResponseDTO.builder().message("notification sent successfully").build())
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
     @PostMapping(value = "/sendToCompany", consumes = MediaType.APPLICATION_JSON_VALUE)
     Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId,
-                                   @Validated(ValidationMarker.CompanyIDMandatoryMarker.class)
-                                   @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
+                                    @Validated(ValidationMarker.CompanyIDMandatoryMarker.class)
+                                    @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
 
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .filter(accountDo -> accountDo.getCompanyId().equals(notificationSendRequestDTO.getCompanyId()))
