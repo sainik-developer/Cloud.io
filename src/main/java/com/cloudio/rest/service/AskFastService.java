@@ -6,4 +6,4 @@ public interface AskFastService {
     default Mono<Boolean> doAuthAndSendSMS(final String phoneNumber, final String smsContent) {
         return Mono.just(true);
     }
-    }
+}
