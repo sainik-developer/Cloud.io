@@ -90,7 +90,6 @@ public class TwilioService {
     public Mono<String> transferCall(final String callSid, final String toAccountId) {
         return Mono.fromSupplier(() -> Call.updater(ACCOUNT_SID, callSid).setTwiml(prepareCallTransferResponse(toAccountId)).update())
                 .doOnNext(call -> log.info("call is transferred successfully and details are {}", call))
-                .filter(call -> call.getTo().equals("client" + createTwilioCompatibleClientId(toAccountId)))
                 .map(Call::getSid)
                 .switchIfEmpty(Mono.error(CallTransferFailedException::new));
     }
