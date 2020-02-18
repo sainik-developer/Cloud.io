@@ -75,10 +75,9 @@ public class TwilioService {
     public Mono<String> holdIncomingCallToAdapter(final String fromAccount, final String callSid) {
         return Mono.fromSupplier(() -> Call.fetcher(ACCOUNT_SID, callSid).fetch())
                 .doOnNext(call -> log.info("fetched call details are {}", call.toString()))
-                .map(Call::getTo)
-                .doOnNext(toCallId -> log.info("toCallId is {}", toCallId))
-                .filter(toCallId -> ("client:" + createTwilioCompatibleClientId(fromAccount)).equals(toCallId))
-                .map(toCallId -> Call.updater(ACCOUNT_SID, callSid).setTwiml(prepareCallHoldingTwilioResponse()).update())
+                .doOnNext(call -> log.info("toCallId is {}", call.getTo()))
+                .filter(call -> ("client:" + createTwilioCompatibleClientId(fromAccount)).equals(call.getTo()))
+                .map(call -> Call.updater(ACCOUNT_SID, call.getParentCallSid()).setTwiml(prepareCallHoldingTwilioResponse()).update())
                 .doOnNext(call -> log.info("hold request update details are {}", call))
                 .map(call -> "Call successfully held")
                 .switchIfEmpty(Mono.error(HoldingNotAllowedException::new));
