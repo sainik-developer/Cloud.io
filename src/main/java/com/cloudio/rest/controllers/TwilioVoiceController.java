@@ -48,14 +48,15 @@ public class TwilioVoiceController {
                         .map(accountDo -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountDo.getAccountId())).build())
                         .doOnNext(client -> log.info(""))
                         .collectList()
-                        .doOnNext(clients -> log.info("total number if client are {}", clients.size()))
+                        .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
                             final Dial.Builder builder = new Dial.Builder();
                             clients.forEach(builder::client);
                             return builder.build();
                         })
                         .map(dial -> new VoiceResponse.Builder().dial(dial).build())
-                        .map(VoiceResponse::toXml))
+                        .map(VoiceResponse::toXml)
+                        .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Adapter Number is not found").build()).build().toXml()));
     }
 
