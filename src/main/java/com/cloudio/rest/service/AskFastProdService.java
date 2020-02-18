@@ -30,6 +30,15 @@ public class AskFastProdService implements AskFastService {
     @Value("${askfast.start.dialog.url}")
     private String START_DIALOG_URL;
 
+    @Value("${askfast.subaccount.url}")
+    private String SUBACCOUNT_CREATE_URL;
+
+   /* @Value("${askfast.subaccount.impersonate.url}")
+    private String SUBACCOUNT_IMPERSONATE_URL;*/
+
+    @Value("${askfast.subaccount.fetchkey.url}")
+    private String KEY_URL;
+
     @Value("${askfast.root.accountId}")
     private String ROOT_ACCOUNT_ID;
 
@@ -46,7 +55,6 @@ public class AskFastProdService implements AskFastService {
                 .map(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
                 .doOnError(throwable -> log.error("error while sending sms {}", throwable.getMessage()));
     }
-
     private Mono<ClientResponse> sendAdapterRequest(final String toAddress,
                                                     final String content,
                                                     final AskfastAdapterRequestDTO.AdapterType adapterType,
