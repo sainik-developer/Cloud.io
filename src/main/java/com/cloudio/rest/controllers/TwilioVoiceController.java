@@ -1,6 +1,8 @@
 package com.cloudio.rest.controllers;
 
+import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
+import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -11,10 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+
+import javax.validation.constraints.NotEmpty;
 
 @Log4j2
 @Validated
@@ -47,14 +49,40 @@ public class TwilioVoiceController {
                         .map(accountDo -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountDo.getAccountId())).build())
                         .doOnNext(client -> log.info(""))
                         .collectList()
-                        .doOnNext(clients -> log.info("total number if client are {}", clients.size()))
+                        .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
                             final Dial.Builder builder = new Dial.Builder();
                             clients.forEach(builder::client);
                             return builder.build();
                         })
                         .map(dial -> new VoiceResponse.Builder().dial(dial).build())
-                        .map(VoiceResponse::toXml))
+                        .map(VoiceResponse::toXml)
+                        .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Adapter Number is not found").build()).build().toXml()));
+    }
+
+    @PostMapping(value = "/hold", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseDTO> handleHold(@RequestHeader("accountId") final String fromAccountId,
+                                        @NotEmpty @RequestParam("callSid") final String callSid) {
+        return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
+                .flatMap(accountDo -> twilioService.holdIncomingCallToAdapter(fromAccountId, callSid))
+                .map(s -> ResponseDTO.builder().data(s).build())
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
+    }
+
+    @PostMapping(value = "/transfer", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseDTO> handleTransfer(@RequestHeader("accountId") final String fromAccountId,
+                                            @NotEmpty @RequestParam("callSid") final String callSid,
+                                            @NotEmpty @RequestParam("toAccount") final String toAccount) {
+        return accountRepository.findByAccountIdAndStatus(fromAccountId, AccountStatus.ACTIVE)
+                .doOnNext(accountDo -> log.info("from account Id found and ACTIVE and details are {}", accountDo))
+                .flatMap(fromAccountDo -> accountRepository.findByAccountIdAndStatus(toAccount, AccountStatus.ACTIVE)
+                        .doOnNext(accountDo -> log.info("to account Id found and details are {}", accountDo))
+                        .filter(toAccountDo -> fromAccountDo.getCompanyId().equals(toAccountDo.getCompanyId()))
+                        .doOnNext(accountDo -> log.info("both are part of same company, where company Id is {}", accountDo.getCompanyId()))
+                        .flatMap(toAccountDo -> twilioService.transferCall(callSid, toAccount))
+                        .doOnNext(newCallSid -> log.info("call is transferred successfully where new call sid is {}", newCallSid))
+                        .map(newCallSid -> ResponseDTO.builder().data(newCallSid).build()))
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 }

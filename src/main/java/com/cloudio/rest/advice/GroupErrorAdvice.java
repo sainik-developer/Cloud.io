@@ -118,4 +118,16 @@ public class GroupErrorAdvice {
     public ResponseDTO tokenMissingException(final Exception e) {
         return new ResponseDTO(1032, "Account has not registered FCM or APN token yet", null);
     }
+
+    @ExceptionHandler(value = HoldingNotAllowedException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO holdingNotAllowedException(final Exception e) {
+        return new ResponseDTO(1032, "Holding not allowed for call which you are not recipient", null);
+    }
+
+    @ExceptionHandler(value = CallTransferFailedException.class)
+    @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
+    public ResponseDTO callTransferFailedException(final Exception e) {
+        return new ResponseDTO(1032, "Call transfer failed", null);
+    }
 }
