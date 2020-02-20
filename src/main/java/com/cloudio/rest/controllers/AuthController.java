@@ -54,7 +54,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public Mono<String> logout(@RequestHeader("Authorization") final String token) {
-        return authService.logout(token).switchIfEmpty(Mono.error(new InvalidTokenException()));
+    public Mono<ResponseDTO> logout(@RequestHeader("Authorization") final String token) {
+        return authService.logout(token).map(s -> ResponseDTO.builder().message("Logged out successfully").build()).switchIfEmpty(Mono.error(new InvalidTokenException()));
     }
 }
