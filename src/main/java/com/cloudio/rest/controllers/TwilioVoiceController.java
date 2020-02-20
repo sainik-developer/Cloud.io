@@ -8,10 +8,14 @@ import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.service.TwilioService;
 import com.twilio.twiml.VoiceResponse;
-import com.twilio.twiml.voice.*;
+import com.twilio.twiml.voice.Client;
+import com.twilio.twiml.voice.Dial;
+import com.twilio.twiml.voice.Gather;
+import com.twilio.twiml.voice.Say;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -32,8 +36,9 @@ public class TwilioVoiceController {
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
         log.info("init body from call is {}", twilioCallRequestDTO);
         return Mono.just(twilioCallRequestDTO)
+                .filter(twilioCallRequestDto -> !StringUtils.isEmpty(twilioCallRequestDto.getFrom()))
                 .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client"))
-                .map(twilioCallRequestDto -> new VoiceResponse.Builder().say(new Say.Builder("One to one call for transfer is not yet implemented in cloud.io").build()).reject(new Reject.Builder().reason(Reject.Reason.REJECTED).build()).build())
+                .map(twilioCallRequestDto -> new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo()).build()).build()).build())
                 .map(VoiceResponse::toXml)
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));
     }
