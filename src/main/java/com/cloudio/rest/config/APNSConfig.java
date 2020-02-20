@@ -16,7 +16,6 @@ import java.io.IOException;
 @Configuration
 @RequiredArgsConstructor
 public class APNSConfig {
-
     private final AWSS3Services awss3Services;
 
     @Bean(destroyMethod = "close")
