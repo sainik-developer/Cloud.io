@@ -46,7 +46,6 @@ public class AskFastProdService implements AskFastService {
                 .map(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
                 .doOnError(throwable -> log.error("error while sending sms {}", throwable.getMessage()));
     }
-
     private Mono<ClientResponse> sendAdapterRequest(final String toAddress,
                                                     final String content,
                                                     final AskfastAdapterRequestDTO.AdapterType adapterType,
