@@ -6,10 +6,12 @@ import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
 import com.cloudio.rest.pojo.BrainTreeDetail;
 import com.cloudio.rest.repository.AccountRepository;
+import com.cloudio.rest.repository.TokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -23,6 +25,7 @@ public class AccountService {
     private String planId;
 
     private final AccountRepository accountRepository;
+    private final TokenRepository tokenRepository;
 
     public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
@@ -41,4 +44,12 @@ public class AccountService {
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build();
     }
+
+//    public Flux<AccountDO> getTokenRegisteredAccount(final String companyId) {
+//        return accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE)
+//                .map(AccountDO::getAccountId)
+//                .collectList()
+//                .flatMapMany(tokenRepository::findByAccountIds);
+//
+//    }
 }
