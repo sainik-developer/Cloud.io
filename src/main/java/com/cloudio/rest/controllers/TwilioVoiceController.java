@@ -38,7 +38,7 @@ public class TwilioVoiceController {
         return Mono.just(twilioCallRequestDTO)
                 .filter(twilioCallRequestDto -> !StringUtils.isEmpty(twilioCallRequestDto.getFrom()))
                 .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client"))
-                .map(twilioCallRequestDto -> new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo()).build()).build()).build())
+                .map(twilioCallRequestDto -> new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo().substring(7)).build()).build()).build())
                 .map(VoiceResponse::toXml)
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));
     }
