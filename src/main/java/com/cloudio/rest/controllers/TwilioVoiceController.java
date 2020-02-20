@@ -6,6 +6,7 @@ import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
+import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.TwilioService;
 import com.twilio.twiml.VoiceResponse;
 import com.twilio.twiml.voice.*;
@@ -27,6 +28,7 @@ public class TwilioVoiceController {
     private final CompanyRepository companyRepository;
     private final AccountRepository accountRepository;
     private final TwilioService twilioService;
+    private final AccountService accountService;
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -44,10 +46,8 @@ public class TwilioVoiceController {
         log.info("/dtmf is called {} where adapter number is {}", twilioCallRequestDTO, adapterNumber);
         return companyRepository.findByAdapterNumber(adapterNumber)
                 .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
-                .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatus(companyDo.getCompanyId(), AccountStatus.ACTIVE)
-                        .doOnNext(accountDo -> log.info(""))
-                        .map(accountDo -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountDo.getAccountId())).build())
-                        .doOnNext(client -> log.info(""))
+                .flatMap(companyDo -> accountService.getTokenRegisteredAccount(companyDo.getCompanyId())
+                        .map(accountId -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountId)).build())
                         .collectList()
                         .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
@@ -58,7 +58,7 @@ public class TwilioVoiceController {
                         .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                         .map(VoiceResponse::toXml)
                         .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
-                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Adapter Number is not found").build()).build().toXml()));
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Thank you for calling. At this moment no one is available, Please try again at another moment.").build()).hangup(new Hangup.Builder().build()).build().toXml()));
     }
 
     @PostMapping(value = "/hold", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -1,6 +1,7 @@
 package com.cloudio.rest.service;
 
 import com.cloudio.rest.entity.AccountDO;
+import com.cloudio.rest.entity.TokenDO;
 import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.AccountType;
@@ -45,11 +46,12 @@ public class AccountService {
                 .build();
     }
 
-//    public Flux<AccountDO> getTokenRegisteredAccount(final String companyId) {
-//        return accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE)
-//                .map(AccountDO::getAccountId)
-//                .collectList()
-//                .flatMapMany(tokenRepository::findByAccountIds);
-//
-//    }
+    public Flux<String> getTokenRegisteredAccount(final String companyId) {
+        return accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE)
+                .map(AccountDO::getAccountId)
+                .collectList()
+                .flatMapMany(tokenRepository::findByAccountIds)
+                .map(TokenDO::getAccountId)
+                .switchIfEmpty(Mono.error(RuntimeException::new));
+    }
 }
