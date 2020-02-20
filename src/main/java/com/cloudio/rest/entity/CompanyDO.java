@@ -25,6 +25,7 @@ public class CompanyDO {
     private String name;
     private String companyAvatarUrl;
     private CompanyStatus companyStatus;
+    private String adapterNumber;
     @CreatedDate
     private LocalDateTime created;
     @LastModifiedDate

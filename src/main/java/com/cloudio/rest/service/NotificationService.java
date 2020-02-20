@@ -47,11 +47,12 @@ public class NotificationService {
 //                .switchIfEmpty(new RuntimeException());
 //    }
 //
-    public Mono<Boolean> sendNotificationToGroup(final GroupDO groupDO, final Map<String, String> data) {
+    public Mono<Boolean> sendNotificationToGroup(final GroupDO groupDO, final Map<String, String> data, final String senderAccountId) {
         return Mono.just(groupDO)
                 .filter(groupDo -> groupDo.getGroupType() == GroupType.DEFAULT)
                 .flatMap(groupDo -> companyRepository.findByCompanyId(groupDO.getCompanyId()))
                 .flatMap(companyDO -> accountRepository.findByCompanyIdAndStatus(companyDO.getCompanyId(), AccountStatus.ACTIVE)
+                        .filter(accountDo -> !accountDo.getAccountId().equals(senderAccountId))
                         .map(AccountDO::getAccountId)
                         .collectList()
                         .flatMapMany(accountIds -> sendAlertNotification(accountIds, data))

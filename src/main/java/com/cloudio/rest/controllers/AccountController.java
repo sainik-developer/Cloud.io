@@ -3,10 +3,7 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.*;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.entity.TokenDO;
-import com.cloudio.rest.exception.AccountNotExistException;
-import com.cloudio.rest.exception.AccountProfileImageNotFoundException;
-import com.cloudio.rest.exception.FirebaseException;
-import com.cloudio.rest.exception.UnautherizedToInviteException;
+import com.cloudio.rest.exception.*;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.FirebaseTokenMapper;
 import com.cloudio.rest.pojo.AccountState;
@@ -172,8 +169,8 @@ public class AccountController {
     public Mono<TwilioTokenResponseDTO> createTwilioClientCapabilityToken(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getAccountId)
-                .flatMap(twilioService::generateTwilioClientCapabilityToken)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
-
+                .flatMap(tokenRepository::findByAccountId)
+                .flatMap(tokenDo -> twilioService.generateTwilioAccessToken(tokenDo.getAccountId(), tokenDo.getDevice()))
+                .switchIfEmpty(Mono.error(new TokenMissingException()));
     }
 }

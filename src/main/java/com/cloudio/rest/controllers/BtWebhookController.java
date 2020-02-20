@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 @RequestMapping("/webhook/subscription")
 @RequiredArgsConstructor
 public class BtWebhookController {
-
     private final BraintreeGateway gateway;
     private final SubscriptionRepository subscriptionRepository;
     private final TransactionRepository transactionRepository;
