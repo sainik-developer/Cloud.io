@@ -23,7 +23,7 @@ public class APNSConfig {
     ApnsClient createClientSandBox(@Value("${amazonProperties.sensitive.bucketName}") final String bucketName,
                                    @Value("${amazonProperties.apns.p12}") String apnsCertificateFileName, @Value("${apns.p12.password}") String apnP12Password) throws IOException {
         log.info("Going to create apns client with credential file named {} ", apnsCertificateFileName);
-        return new ApnsClientBuilder().setApnsServer(ApnsClientBuilder.DEVELOPMENT_APNS_HOST)
+        return new ApnsClientBuilder().setApnsServer(ApnsClientBuilder.PRODUCTION_APNS_HOST)
                 .setClientCredentials(awss3Services.getFile(bucketName, apnsCertificateFileName).getObjectContent(), apnP12Password).build();
     }
 
