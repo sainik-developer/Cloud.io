@@ -62,11 +62,6 @@ public class NotificationService {
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
-    enum OSType {
-        ANDROID,
-        IOS
-    }
-
     public Flux<Integer> sendAlertNotification(final List<String> accountIds, final Map<String, String> bodyData) {
         log.info("alert send notification called for accounts {} and data is {}", accountIds, bodyData);
         return groupBy(accountIds, PushType.ALERT, "alert")
@@ -76,6 +71,29 @@ public class NotificationService {
                                 osTypeTripleGroupedFlux.key() == OSType.ANDROID ? firebaseService.sendNotification(triples.stream().map(triple -> Pair.of(triple.getRight(), triple.getMiddle())).collect(Collectors.toList()), bodyData) :
                                         apnService.sendAlertNotifications(triples.stream().map(triple -> Pair.of(triple.getRight(), triple.getMiddle())).collect(Collectors.toList()), bodyData))
                 );
+    }
+
+    private Flux<Triple<OSType, String, String>> groupBy(final List<String> accountIds, final PushType pushType,
+                                                         final String actionType) {
+        final String requestBatchId = UUID.randomUUID().toString();
+        return Flux.fromIterable(accountIds)
+                .flatMap(accountId -> tokenRepository.findByAccountId(accountId)
+                        .flatMap(tokenDo -> {
+                            if (tokenDo.getDevice().equals("android")) {
+                                return notificationStatsService.createStats(requestBatchId, tokenDo.getToken(), tokenDo.getAccountId(), actionType, "FIREBASE")
+                                        .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
+                            } else if (tokenDo.getDevice().equals("ios")) {
+                                if (pushType == PushType.ALERT || pushType == PushType.BACKGROUND) {
+                                    return notificationStatsService.createStats(requestBatchId, tokenDo.getToken(), tokenDo.getAccountId(), actionType, pushType.toString())
+                                            .map(tokenStatsDo -> Triple.of(OSType.IOS, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
+                                } else if (pushType == PushType.VOIP) {
+                                    return notificationStatsService.createStats(requestBatchId, tokenDo.getVoipToken(), tokenDo.getAccountId(), actionType, pushType.toString())
+                                            .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
+                                }
+                            }
+                            return Mono.just(Triple.of(OSType.ANDROID, "NULL", "NULL"));
+                        }).switchIfEmpty(notificationStatsService.createStats(requestBatchId, null, "", actionType, pushType.toString())
+                                .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()))));
     }
 
     //        public void sendRingNotification ( final List<String> accountIds, final String sessionId, String roomName,
@@ -128,26 +146,8 @@ public class NotificationService {
 //        }
 //
 
-    private Flux<Triple<OSType, String, String>> groupBy(final List<String> accountIds, final PushType pushType,
-                                                         final String actionType) {
-        final String requestBatchId = UUID.randomUUID().toString();
-        return Flux.fromIterable(accountIds)
-                .flatMap(accountId -> tokenRepository.findByAccountId(accountId)
-                        .flatMap(tokenDo -> {
-                            if (tokenDo.getDevice().equals("android")) {
-                                return notificationStatsService.createStats(requestBatchId, tokenDo.getToken(), tokenDo.getAccountId(), actionType, "FIREBASE")
-                                        .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
-                            } else if (tokenDo.getDevice().equals("ios")) {
-                                if (pushType == PushType.ALERT || pushType == PushType.BACKGROUND) {
-                                    return notificationStatsService.createStats(requestBatchId, tokenDo.getToken(), tokenDo.getAccountId(), actionType, pushType.toString())
-                                            .map(tokenStatsDo -> Triple.of(OSType.IOS, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
-                                } else if (pushType == PushType.VOIP) {
-                                    return notificationStatsService.createStats(requestBatchId, tokenDo.getVoipToken(), tokenDo.getAccountId(), actionType, pushType.toString())
-                                            .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()));
-                                }
-                            }
-                            return Mono.just(Triple.of(OSType.ANDROID, "NULL", "NULL"));
-                        }).switchIfEmpty(notificationStatsService.createStats(requestBatchId, null, "", actionType, pushType.toString())
-                                .map(tokenStatsDo -> Triple.of(OSType.ANDROID, StringUtils.defaultIfBlank(tokenStatsDo.getToken(), "NULL"), tokenStatsDo.getNotificationId()))));
+    enum OSType {
+        ANDROID,
+        IOS
     }
 }

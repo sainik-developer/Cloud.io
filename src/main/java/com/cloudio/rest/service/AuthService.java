@@ -11,10 +11,7 @@ import com.cloudio.rest.exception.SuspiciousStateException;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.pojo.OTPGenerator;
 import com.cloudio.rest.pojo.TempAuthToken;
-import com.cloudio.rest.repository.AccessTokenRepository;
-import com.cloudio.rest.repository.AccountRepository;
-import com.cloudio.rest.repository.CompanyRepository;
-import com.cloudio.rest.repository.SignInCodeRepository;
+import com.cloudio.rest.repository.*;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.RequiredArgsConstructor;
@@ -36,13 +33,13 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class AuthService {
-
     private final SignInCodeRepository signInCodeRepository;
     private final AccountRepository accountRepository;
     private final AccessTokenRepository accessTokenRepository;
     private final AskFastService askFastService;
     private final CompanyRepository companyRepository;
     private final OTPGenerator otpGenerator;
+    private final TokenRepository tokenRepository;
 
     @Value("${cloudio.signup.maxRetry}")
     private Integer maxRetry;
@@ -153,10 +150,13 @@ public class AuthService {
         log.info("user trying to logout {}", accessToken);
         return accessTokenRepository.findByToken(accessToken)
                 .flatMap(at -> accessTokenRepository.deleteByToken(at.getToken())
-                        .flatMap(b -> accountRepository.findByAccountIdAndStatus(at.getAccountId(), AccountStatus.ACTIVE).map(accountDo -> {
-                            accountDo.setFirebaseAuthToken(null);
-                            return accountDo;
-                        }).flatMap(accountRepository::save)))
+                        .flatMap(b -> accountRepository.findByAccountIdAndStatus(at.getAccountId(), AccountStatus.ACTIVE)
+                                .map(accountDo -> {
+                                    accountDo.setFirebaseAuthToken(null);
+                                    return accountDo;
+                                })
+                                .flatMap(accountRepository::save)
+                                .flatMap(accountDo -> tokenRepository.deleteByAccountId(accountDo.getAccountId()))))
                 .map(aBoolean -> "Logged out successfully");
     }
 

@@ -59,7 +59,6 @@ public class NotificationController {
     Mono<ResponseDTO> sendToCompany(@RequestHeader("accountId") final String accountId,
                                     @Validated(ValidationMarker.CompanyIDMandatoryMarker.class)
                                     @RequestBody NotificationSendRequestDTO notificationSendRequestDTO) {
-
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .filter(accountDo -> accountDo.getCompanyId().equals(notificationSendRequestDTO.getCompanyId()))
                 .map(accountDO -> accountRepository.findByCompanyIdAndStatus(notificationSendRequestDTO.getCompanyId(), AccountStatus.ACTIVE)

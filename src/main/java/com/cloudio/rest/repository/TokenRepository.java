@@ -16,4 +16,6 @@ public interface TokenRepository extends ReactiveMongoRepository<TokenDO, String
 
     @Query("{'accountId' :{$in : ?0 }}")
     Flux<TokenDO> findByAccountIds(List<String> accountIds);
+
+    Mono<Long> deleteByAccountId(final String accountId);
 }

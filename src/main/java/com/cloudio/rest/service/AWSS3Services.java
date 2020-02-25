@@ -19,13 +19,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AWSS3Services {
-
+    private final AmazonS3 s3client;
     @Value("${amazonProperties.endpointUrl}")
     private String endpointUrl;
     @Value("${amazonProperties.bucketName}")
     private String bucketName;
-
-    private final AmazonS3 s3client;
 
     public Mono<String> uploadFileInS3(final Mono<FilePart> filePartMono) {
         return filePartMono.flatMap(filePart -> {

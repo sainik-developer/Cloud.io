@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 public class OTPConfig {
     @Bean
-    @Profile({"sandbox","local"})
+    @Profile({"sandbox", "local"})
     public OTPGenerator staticOTPGenerator() {
         return () -> "111111";
     }

@@ -20,6 +20,10 @@ public class AskfastCreateSubAccountRequestDTO {
     private String name;
     private List<ContactInfo> contactInfos;
 
+    public enum ContactInfoTag {
+        PHONE, EMAIL;
+    }
+
     @Data
     @Builder
     @AllArgsConstructor
@@ -28,9 +32,5 @@ public class AskfastCreateSubAccountRequestDTO {
     public static class ContactInfo {
         private ContactInfoTag contactInfoTag;
         private String contactInfo;
-    }
-
-    public enum ContactInfoTag {
-        PHONE, EMAIL;
     }
 }
