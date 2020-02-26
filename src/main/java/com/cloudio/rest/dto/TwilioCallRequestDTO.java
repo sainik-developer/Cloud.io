@@ -1,5 +1,6 @@
 package com.cloudio.rest.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -13,7 +14,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TwilioCallRequestDTO {
-
     @JsonProperty(value = "msg")
     private String msg;
     @JsonProperty(value = "Digits")
@@ -70,4 +70,9 @@ public class TwilioCallRequestDTO {
     private String fromZip;
     @JsonProperty(value = "FromState")
     private String fromState;
+
+    @JsonIgnore
+    private String fromPhoneNumber;
+    @JsonIgnore
+    private String fromNameCloudIO;
 }

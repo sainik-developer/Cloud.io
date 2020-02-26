@@ -8,14 +8,11 @@ import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.service.TwilioService;
 import com.twilio.twiml.VoiceResponse;
-import com.twilio.twiml.voice.Client;
-import com.twilio.twiml.voice.Dial;
-import com.twilio.twiml.voice.Gather;
-import com.twilio.twiml.voice.Say;
+import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -38,7 +35,18 @@ public class TwilioVoiceController {
         return Mono.just(twilioCallRequestDTO)
                 .filter(twilioCallRequestDto -> !StringUtils.isEmpty(twilioCallRequestDto.getFrom()))
                 .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client") && twilioCallRequestDto.getTo().startsWith("client"))
-                .map(twilioCallRequestDto -> new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo().substring(7)).build()).build()).build())
+                .flatMap(twilioCallRequestDto -> accountRepository.findByAccountIdAndStatus("CIO:ACC:" + twilioCallRequestDto.getFrom().substring(15).replace("_", "-"), AccountStatus.ACTIVE)
+                        .map(accounto -> {
+                            twilioCallRequestDto.setFromPhoneNumber(accounto.getPhoneNumber());
+                            twilioCallRequestDto.setFromNameCloudIO(accounto.getFirstName() + StringUtils.defaultString(accounto.getLastName()));
+                            return twilioCallRequestDto;
+                        }))
+                .map(twilioCallRequestDto -> new VoiceResponse.Builder()
+                        .dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo().substring(7))
+                                .parameter(new Parameter.Builder().name("fromPhoneNumber").value(twilioCallRequestDto.getFromPhoneNumber()).build())
+                                .parameter(new Parameter.Builder().name("fromNameCloudIO").value(twilioCallRequestDto.getFromNameCloudIO()).build())
+                                .build()).build())
+                        .build())
                 .map(VoiceResponse::toXml)
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));
     }
