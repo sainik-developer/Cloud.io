@@ -25,10 +25,10 @@ public class GroupService {
     private final GroupRepository groupRepository;
 
     public Mono<GroupDO> createDefaultGroup(final String companyId) {
-        return groupRepository.save(GroupDO.builder().companyId(companyId).groupId("CIO:GR:"+UUID.randomUUID().toString()).groupType(GroupType.DEFAULT).build());
+        return groupRepository.save(GroupDO.builder().companyId(companyId).groupId("CIO:GR:" + UUID.randomUUID().toString()).groupType(GroupType.DEFAULT).build());
     }
 
-    public GroupState getGroupStatus(List<AccountDTO> accountDTOS){
-        return accountDTOS.stream().map(AccountDTO::getState).anyMatch(accountState -> accountState== AccountState.ONLINE) ?  ONLINE : OFFLINE;
+    public GroupState getGroupStatus(List<AccountDTO> accountDTOS) {
+        return accountDTOS.stream().map(AccountDTO::getState).anyMatch(accountState -> accountState == AccountState.ONLINE) ? ONLINE : OFFLINE;
     }
 }

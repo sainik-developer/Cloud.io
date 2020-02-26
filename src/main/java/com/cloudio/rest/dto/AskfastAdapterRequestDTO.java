@@ -12,10 +12,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AskfastAdapterRequestDTO {
+    private final String senderName = "Cloudio";
     private String address;
     private String url;
     private AdapterType adapterType = AdapterType.SMS;
-    private final String senderName = "Cloudio";
 
     @AllArgsConstructor
     public static enum AdapterType {

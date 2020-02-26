@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Profile(value = "prod")
 public class AskFastProdService implements AskFastService {
-
     private final WebClient webClient;
     private final AskFastAuthService askFastAuthService;
 
@@ -46,6 +45,7 @@ public class AskFastProdService implements AskFastService {
                 .map(clientResponse -> clientResponse.statusCode() == org.springframework.http.HttpStatus.OK)
                 .doOnError(throwable -> log.error("error while sending sms {}", throwable.getMessage()));
     }
+
     private Mono<ClientResponse> sendAdapterRequest(final String toAddress,
                                                     final String content,
                                                     final AskfastAdapterRequestDTO.AdapterType adapterType,

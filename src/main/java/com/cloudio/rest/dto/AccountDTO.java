@@ -21,6 +21,8 @@ import javax.validation.constraints.NotEmpty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AccountDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private final AccountStatus status = AccountStatus.ACTIVE;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String accountId;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String companyId;
@@ -34,8 +36,6 @@ public class AccountDTO {
     private String profileUrl;
     @JsonIgnore
     private String firebaseAuthToken;
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private final AccountStatus status = AccountStatus.ACTIVE;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private AccountType type;
     @JsonIgnore

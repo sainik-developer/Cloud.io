@@ -7,7 +7,6 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface AccessTokenRepository extends ReactiveMongoRepository<AccessTokenDO, String> {
-
     Mono<AccessTokenDO> findByAccountId(final String accountId);
 
     Mono<AccessTokenDO> findByToken(final String token);

@@ -18,11 +18,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
-
+    private final AccountRepository accountRepository;
     @Value("${payment.bt.planId}")
     private String planId;
-
-    private final AccountRepository accountRepository;
 
     public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
