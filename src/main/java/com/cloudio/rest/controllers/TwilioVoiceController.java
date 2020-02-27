@@ -42,10 +42,12 @@ public class TwilioVoiceController {
                             return twilioCallRequestDto;
                         }))
                 .map(twilioCallRequestDto -> new VoiceResponse.Builder()
-                        .dial(new Dial.Builder().client(new Client.Builder(twilioCallRequestDto.getTo().substring(7))
-                                .parameter(new Parameter.Builder().name("fromPhoneNumber").value(twilioCallRequestDto.getFromPhoneNumber()).build())
-                                .parameter(new Parameter.Builder().name("fromNameCloudIO").value(twilioCallRequestDto.getFromNameCloudIO()).build())
-                                .build()).build())
+                        .dial(new Dial.Builder()
+                                .client(new Client.Builder(twilioCallRequestDto.getTo().substring(7))
+                                        .parameter(new Parameter.Builder().name("fromPhoneNumber").value(twilioCallRequestDto.getFromPhoneNumber()).build())
+                                        .parameter(new Parameter.Builder().name("fromNameCloudIO").value(twilioCallRequestDto.getFromNameCloudIO()).build())
+                                        .build())
+                                .build())
                         .build())
                 .map(VoiceResponse::toXml)
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));

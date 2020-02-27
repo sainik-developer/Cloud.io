@@ -20,6 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AWSS3Services {
     private final AmazonS3 s3client;
+
     @Value("${amazonProperties.endpointUrl}")
     private String endpointUrl;
     @Value("${amazonProperties.bucketName}")

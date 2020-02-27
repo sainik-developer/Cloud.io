@@ -21,7 +21,6 @@ import static com.cloudio.rest.pojo.GroupState.ONLINE;
 @Service
 @RequiredArgsConstructor
 public class GroupService {
-
     private final GroupRepository groupRepository;
 
     public Mono<GroupDO> createDefaultGroup(final String companyId) {

@@ -28,6 +28,7 @@ public class PaymentService {
     private final BraintreeGateway gateway;
     private final AccountRepository accountRepository;
     private final SubscriptionRepository subscriptionRepository;
+
     @Value("${payment.bt.planId}")
     private String planId;
 
