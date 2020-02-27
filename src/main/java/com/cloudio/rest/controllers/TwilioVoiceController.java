@@ -3,6 +3,7 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -60,7 +61,7 @@ public class TwilioVoiceController {
         log.info("/dtmf is called {} where adapter number is {}", twilioCallRequestDTO, adapterNumber);
         return companyRepository.findByAdapterNumber(adapterNumber)
                 .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
-                .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatus(companyDo.getCompanyId(), AccountStatus.ACTIVE)
+                .flatMap(companyDo -> accountRepository.findByCompanyIdAndStatusAndState(companyDo.getCompanyId(), AccountStatus.ACTIVE, AccountState.ONLINE)
                         .doOnNext(accountDo -> log.info(""))
                         .map(accountDo -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountDo.getAccountId())).build())
                         .doOnNext(client -> log.info(""))
