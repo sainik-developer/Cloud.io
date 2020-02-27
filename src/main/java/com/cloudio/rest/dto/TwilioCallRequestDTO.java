@@ -70,6 +70,8 @@ public class TwilioCallRequestDTO {
     private String fromZip;
     @JsonProperty(value = "FromState")
     private String fromState;
+    @JsonProperty(value = "InitiatorPhoneNumber")
+    private String initiatorPhoneNumber;
 
     @JsonIgnore
     private String fromPhoneNumber;

@@ -46,6 +46,7 @@ public class TwilioVoiceController {
                                 .client(new Client.Builder(twilioCallRequestDto.getTo().substring(7))
                                         .parameter(new Parameter.Builder().name("fromPhoneNumber").value(twilioCallRequestDto.getFromPhoneNumber()).build())
                                         .parameter(new Parameter.Builder().name("fromNameCloudIO").value(twilioCallRequestDto.getFromNameCloudIO()).build())
+                                        .parameter(new Parameter.Builder().name("InitiatorPhoneNumber").value(twilioCallRequestDto.getInitiatorPhoneNumber()).build())
                                         .build())
                                 .build())
                         .build())
