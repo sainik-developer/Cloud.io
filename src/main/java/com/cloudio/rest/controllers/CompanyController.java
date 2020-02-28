@@ -12,10 +12,7 @@ import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.mapper.GroupMapper;
-import com.cloudio.rest.pojo.AccountState;
-import com.cloudio.rest.pojo.AccountStatus;
-import com.cloudio.rest.pojo.AccountType;
-import com.cloudio.rest.pojo.GroupType;
+import com.cloudio.rest.pojo.*;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.GroupRepository;
@@ -201,4 +198,9 @@ public class CompanyController {
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
+
+//    @PostMapping("/setting")
+//    public Mono<CompanyDTO> saveTheSetting(@RequestHeader("accountId") final String accountId, @RequestBody CompanySetting companySetting) {
+//
+//    }
 }

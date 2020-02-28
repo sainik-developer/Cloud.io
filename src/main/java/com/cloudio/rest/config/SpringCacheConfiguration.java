@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @EnableCaching
 public class SpringCacheConfiguration implements CachingConfigurer {
-
     @Value("${cache.time.out.min}")
     private int TIMEOUT_IN_MIN;
 

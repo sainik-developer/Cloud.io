@@ -1,5 +1,6 @@
 package com.cloudio.rest.entity;
 
+import com.cloudio.rest.pojo.CompanySetting;
 import com.cloudio.rest.pojo.CompanyStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,4 +31,5 @@ public class CompanyDO {
     private LocalDateTime created;
     @LastModifiedDate
     private LocalDateTime updated;
+    private CompanySetting companySetting;
 }

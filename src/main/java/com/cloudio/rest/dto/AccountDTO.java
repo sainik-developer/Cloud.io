@@ -13,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -41,4 +42,6 @@ public class AccountDTO {
     @JsonIgnore
     private AskfastDetail askfastDetail;
     private AccountState state;
+    private LocalDateTime created;
+
 }
