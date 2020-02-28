@@ -30,7 +30,6 @@ import java.util.function.Consumer;
 @Component
 @RequiredArgsConstructor
 public class APNService {
-
     private final ApnsClient apnsClient;
     private final TokenStatsRepository tokenStatsRepository;
 

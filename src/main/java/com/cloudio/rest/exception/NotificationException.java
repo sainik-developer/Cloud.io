@@ -1,4 +1,4 @@
 package com.cloudio.rest.exception;
 
-public class NotificationException extends RuntimeException{
+public class NotificationException extends RuntimeException {
 }

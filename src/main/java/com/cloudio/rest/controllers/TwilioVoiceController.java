@@ -3,6 +3,7 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
+import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -12,6 +13,7 @@ import com.twilio.twiml.VoiceResponse;
 import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -34,8 +36,23 @@ public class TwilioVoiceController {
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
         log.info("init body from call is {}", twilioCallRequestDTO);
         return Mono.just(twilioCallRequestDTO)
-                .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client"))
-                .map(twilioCallRequestDto -> new VoiceResponse.Builder().say(new Say.Builder("One to one call for transfer is not yet implemented in cloud.io").build()).reject(new Reject.Builder().reason(Reject.Reason.REJECTED).build()).build())
+                .filter(twilioCallRequestDto -> !StringUtils.isEmpty(twilioCallRequestDto.getFrom()))
+                .filter(twilioCallRequestDto -> twilioCallRequestDto.getFrom().startsWith("client") && twilioCallRequestDto.getTo().startsWith("client"))
+                .flatMap(twilioCallRequestDto -> accountRepository.findByAccountIdAndStatus("CIO:ACC:" + twilioCallRequestDto.getFrom().substring(15).replace("_", "-"), AccountStatus.ACTIVE)
+                        .map(accounto -> {
+                            twilioCallRequestDto.setFromPhoneNumber(accounto.getPhoneNumber());
+                            twilioCallRequestDto.setFromNameCloudIO(accounto.getFirstName() + StringUtils.defaultString(accounto.getLastName()));
+                            return twilioCallRequestDto;
+                        }))
+                .map(twilioCallRequestDto -> new VoiceResponse.Builder()
+                        .dial(new Dial.Builder()
+                                .client(new Client.Builder(twilioCallRequestDto.getTo().substring(7))
+                                        .parameter(new Parameter.Builder().name("fromPhoneNumber").value(twilioCallRequestDto.getFromPhoneNumber()).build())
+                                        .parameter(new Parameter.Builder().name("fromNameCloudIO").value(twilioCallRequestDto.getFromNameCloudIO()).build())
+                                        .parameter(new Parameter.Builder().name("InitiatorPhoneNumber").value(twilioCallRequestDto.getInitiatorPhoneNumber()).build())
+                                        .build())
+                                .build())
+                        .build())
                 .map(VoiceResponse::toXml)
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().gather(new Gather.Builder().finishOnKey("*").action("/twilio/voice/dtmf").build()).build().toXml()));
     }

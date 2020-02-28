@@ -14,7 +14,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class NotificationStatsService {
-
     private final AccountRepository accountRepository;
     private final TokenStatsRepository tokenStatsRepository;
 

@@ -8,8 +8,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/stats")
 @RequiredArgsConstructor

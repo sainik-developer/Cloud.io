@@ -21,12 +21,11 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AccountService {
+    private final AccountRepository accountRepository;
+    private final TokenRepository tokenRepository;
 
     @Value("${payment.bt.planId}")
     private String planId;
-
-    private final AccountRepository accountRepository;
-    private final TokenRepository tokenRepository;
 
     public Mono<AccountDO> createAccount(final String companyId, final String phoneNumber, final AccountType accountType, final String firstName, final String lastname) {
         return accountRepository.findByPhoneNumberAndCompanyId(phoneNumber, companyId)
@@ -40,7 +39,7 @@ public class AccountService {
                 .type(accountType).firstName(firstName)
                 .detail(accountType == AccountType.ADMIN ? BrainTreeDetail.builder().planId(planId).build() : null)
                 .lastName(lastname).status(AccountStatus.ACTIVE)
-                .state(AccountState.OFFLINE)
+                .state(AccountState.ONLINE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build();

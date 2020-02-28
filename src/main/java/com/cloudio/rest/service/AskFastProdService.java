@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 @Profile(value = "prod")
 public class AskFastProdService implements AskFastService {
-
     private final WebClient webClient;
     private final AskFastAuthService askFastAuthService;
 

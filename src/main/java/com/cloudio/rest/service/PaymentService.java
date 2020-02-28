@@ -25,13 +25,12 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-
-    @Value("${payment.bt.planId}")
-    private String planId;
-
     private final BraintreeGateway gateway;
     private final AccountRepository accountRepository;
     private final SubscriptionRepository subscriptionRepository;
+
+    @Value("${payment.bt.planId}")
+    private String planId;
 
     public Mono<PaymentClientTokenResponseDTO> getClientToken(final AccountDO accountDO) {
         return Mono.just(accountDO)
