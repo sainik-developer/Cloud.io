@@ -46,7 +46,7 @@ public class AccountService {
     }
 
     public Flux<String> getTokenRegisteredAccount(final String companyId) {
-        return accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE)
+        return accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.ONLINE)
                 .map(AccountDO::getAccountId)
                 .collectList()
                 .flatMapMany(tokenRepository::findByAccountIds)
