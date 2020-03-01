@@ -1,9 +1,6 @@
 package com.cloudio.rest.controllers;
 
-import com.cloudio.rest.dto.AccountDTO;
-import com.cloudio.rest.dto.CompanyDTO;
-import com.cloudio.rest.dto.GroupDTO;
-import com.cloudio.rest.dto.ResponseDTO;
+import com.cloudio.rest.dto.*;
 import com.cloudio.rest.entity.AccountDO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.exception.CompanyNameNotUniqueException;
@@ -12,7 +9,10 @@ import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.CompanyMapper;
 import com.cloudio.rest.mapper.GroupMapper;
-import com.cloudio.rest.pojo.*;
+import com.cloudio.rest.pojo.AccountState;
+import com.cloudio.rest.pojo.AccountStatus;
+import com.cloudio.rest.pojo.AccountType;
+import com.cloudio.rest.pojo.GroupType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.cloudio.rest.repository.GroupRepository;
@@ -113,7 +113,7 @@ public class CompanyController {
                                 .switchIfEmpty(Mono.just(GroupMapper.INSTANCE.toDTO(groupDo)));
                     }
                 })
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -174,7 +174,7 @@ public class CompanyController {
                         }))
                 .flatMap(companyRepository::save)
                 .map(CompanyMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new NotAuthorizedToUpdateCompanyProfileException()));
+                .switchIfEmpty(Mono.error(NotAuthorizedToUpdateCompanyProfileException::new));
     }
 
     @DeleteMapping("/delete/avatar")
@@ -196,11 +196,11 @@ public class CompanyController {
                 .map(AccountDO::getCompanyId)
                 .flatMapMany(companyId -> !state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
                 .map(AccountMapper.INSTANCE::toDTO)
-                .switchIfEmpty(Mono.error(new AccountNotExistException()));
+                .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
-//    @PostMapping("/setting")
-//    public Mono<CompanyDTO> saveTheSetting(@RequestHeader("accountId") final String accountId, @RequestBody CompanySetting companySetting) {
-//
-//    }
+    @PostMapping("/setting")
+    public Mono<CompanyDTO> saveTheSetting(@RequestHeader("accountId") final String accountId, @RequestBody CompanySettingDTO companySettingDTO) {
+
+    }
 }

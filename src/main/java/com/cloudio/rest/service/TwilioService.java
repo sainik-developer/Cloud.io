@@ -1,8 +1,11 @@
 package com.cloudio.rest.service;
 
 import com.cloudio.rest.dto.TwilioTokenResponseDTO;
+import com.cloudio.rest.entity.CompanyDO;
 import com.cloudio.rest.exception.CallTransferFailedException;
 import com.cloudio.rest.exception.HoldingNotAllowedException;
+import com.cloudio.rest.repository.AccountRepository;
+import com.cloudio.rest.repository.CompanyRepository;
 import com.twilio.Twilio;
 import com.twilio.jwt.accesstoken.AccessToken;
 import com.twilio.jwt.accesstoken.VoiceGrant;
@@ -25,6 +28,9 @@ import javax.annotation.PostConstruct;
 @Service
 @RequiredArgsConstructor
 public class TwilioService {
+    private final CompanyRepository companyRepository;
+    private final AccountRepository accountRepository;
+
     @Value("${twilio.account.sid}")
     private String ACCOUNT_SID;
     @Value("${twilio.account.authtoken}")
@@ -97,4 +103,20 @@ public class TwilioService {
     private String prepareCallTransferResponse(final String toAccountId) {
         return new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(createTwilioCompatibleClientId(toAccountId)).build()).build()).build().toXml();
     }
+//
+//    public Mono<String> handleWithSetting(final String adapterNumber) {
+//        companyRepository.findByAdapterNumber(adapterNumber)
+//                .map(CompanyDO::getCompanySetting)
+//                .map(companySetting -> )
+//                .switchIfEmpty(// handle no company setting found)
+//    }
+//
+//    private Mono<String> handleCallAtOnce(final CompanyDO companyDO){
+//
+//    }
+//
+//
+//    private Mono<String> handleCallOneByOne(final CompanyDO companyDO){
+//
+//    }
 }
