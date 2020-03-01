@@ -34,7 +34,7 @@ public class AccountService {
                 .type(accountType).firstName(firstName)
                 .detail(accountType == AccountType.ADMIN ? BrainTreeDetail.builder().planId(planId).build() : null)
                 .lastName(lastname).status(AccountStatus.ACTIVE)
-                .state(AccountState.OFFLINE)
+                .state(AccountState.ONLINE)
                 .accountId("CIO:ACC:" + UUID.randomUUID().toString())
                 .companyId(companyId).phoneNumber(phoneNumber)
                 .build();
