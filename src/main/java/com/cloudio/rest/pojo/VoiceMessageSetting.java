@@ -13,4 +13,5 @@ public class VoiceMessageSetting {
     private String content;
     private String lang;
     private String voiceType;
+    private Integer playafterInSec;
 }

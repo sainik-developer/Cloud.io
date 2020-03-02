@@ -4,20 +4,22 @@ import com.cloudio.rest.dto.TwilioTokenResponseDTO;
 import com.cloudio.rest.entity.CompanyDO;
 import com.cloudio.rest.exception.CallTransferFailedException;
 import com.cloudio.rest.exception.HoldingNotAllowedException;
+import com.cloudio.rest.pojo.CompanySetting;
+import com.cloudio.rest.pojo.RingType;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.twilio.Twilio;
+import com.twilio.http.HttpMethod;
 import com.twilio.jwt.accesstoken.AccessToken;
 import com.twilio.jwt.accesstoken.VoiceGrant;
 import com.twilio.rest.api.v2010.account.Call;
 import com.twilio.twiml.VoiceResponse;
-import com.twilio.twiml.voice.Client;
-import com.twilio.twiml.voice.Dial;
-import com.twilio.twiml.voice.Play;
-import com.twilio.twiml.voice.Say;
+import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
@@ -28,8 +30,11 @@ import javax.annotation.PostConstruct;
 @Service
 @RequiredArgsConstructor
 public class TwilioService {
-    private final CompanyRepository companyRepository;
+    private final TwilioService twilioService;
+    private final AccountService accountService;
     private final AccountRepository accountRepository;
+    private final CompanyRepository companyRepository;
+    private final ReactiveRedisOperations<String, CompanySetting> redisOperations;
 
     @Value("${twilio.account.sid}")
     private String ACCOUNT_SID;
@@ -103,20 +108,59 @@ public class TwilioService {
     private String prepareCallTransferResponse(final String toAccountId) {
         return new VoiceResponse.Builder().dial(new Dial.Builder().client(new Client.Builder(createTwilioCompatibleClientId(toAccountId)).build()).build()).build().toXml();
     }
+
+    public Mono<String> handleWithSetting(final String adapterNumber) {
+        return companyRepository.findByAdapterNumber(adapterNumber)
+                .flatMap(companyDo -> companyDo.getCompanySetting().getRingType() == RingType.ALL_AT_ONCE ? handleCallAtOnce(companyDo) : handleCallOneByOne(companyDo))
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder()
+                        .say(new Say.Builder("Thanks for calling to Cloud.io but No company is associated with number").build())
+                        .hangup(new Hangup.Builder().build()).build()
+                        .toXml()));
+    }
+
+    private Mono<String> handleCallAtOnce(final CompanyDO companyDO) {
+        return Mono.just(companyDO)
+                .flatMap(companyDo -> accountService.getTokenRegisteredAccount(companyDo.getCompanyId())
+                        .map(accountId -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountId)).build())
+                        .collectList()
+                        .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
+                        .map(clients -> {
+                            final Dial.Builder builder = new Dial.Builder();
+                            builder.method(HttpMethod.GET).timeout(companyDO.getCompanySetting().getVoiceMessageSetting().getPlayafterInSec()).action("/twilio/voice/timeout?adpaterNumber=" + companyDO.getAdapterNumber() + "ring_type=" + RingType.ALL_AT_ONCE);
+                            clients.forEach(builder::client);
+                            return builder.build();
+                        })
+                        .map(dial -> new VoiceResponse.Builder().dial(dial).build())
+                        .map(VoiceResponse::toXml)
+                        .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Thank you for calling. At this moment no one is available, Please try again at another moment.").build()).hangup(new Hangup.Builder().build()).build().toXml()));
+    }
+
+    private Mono<String> handleCallOneByOne(final CompanyDO companyDO) {
+        return Mono.just(companyDO)
+                .flatMap(companyDo -> accountService.isTokenRegisteredOnlineAndActiveAccount(companyDo.getCompanySetting().getRingOrderAccountIds())
+                        .collectList().map(accountIds -> Pair.of(accountIds.get(0), accountIds.get(1))))
+                .map(firstAndSecondAccountIds -> Pair.of(new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(firstAndSecondAccountIds.getLeft())).build(), firstAndSecondAccountIds.getRight()))
+                .map(clientNextAccountIdPair -> {
+                    final Dial.Builder builder = new Dial.Builder();
+                    builder.client(clientNextAccountIdPair.getLeft());
+                    builder.method(HttpMethod.GET).timeout(companyDO.getCompanySetting().getVoiceMessageSetting().getPlayafterInSec()).action("/twilio/voice/timeout?adpaterNumber=" + companyDO.getAdapterNumber() + "ring_type=" + RingType.IN_ORDER);
+                    return builder.build();
+                })
+                .map(dial -> new VoiceResponse.Builder().dial(dial).build())
+                .map(VoiceResponse::toXml)
+                .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
+    }
 //
-//    public Mono<String> handleWithSetting(final String adapterNumber) {
-//        companyRepository.findByAdapterNumber(adapterNumber)
-//                .map(CompanyDO::getCompanySetting)
-//                .map(companySetting -> )
-//                .switchIfEmpty(// handle no company setting found)
+//    private Mono<String> findFirstAccountActiveAndOnline(final List<String> accountIDs) {
+//        return Flux.fromIterable(accountIDs)
+//                .flatMap(accountId -> accountRepository.findByAccountIdAndStatusAndState(accountId, AccountStatus.ACTIVE, AccountState.ONLINE))// TODO test it
+//                .map(AccountDO::getAccountId)
+//                .collectList()
+//                .map(accountIds -> accountIds.get(0));
 //    }
-//
-//    private Mono<String> handleCallAtOnce(final CompanyDO companyDO){
-//
-//    }
-//
-//
-//    private Mono<String> handleCallOneByOne(final CompanyDO companyDO){
-//
-//    }
+
+    private String prepareTimeOutUrl() {
+
+    }
 }

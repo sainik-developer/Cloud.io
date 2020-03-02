@@ -34,4 +34,6 @@ public interface AccountRepository extends ReactiveMongoRepository<AccountDO, St
     Flux<AccountDO> findByCompanyIdAndStatus(final String companyId, final AccountStatus status);
 
     Flux<AccountDO> findByCompanyIdAndStatusAndState(final String companyId, final AccountStatus status, final AccountState state);
+
+    Mono<AccountDO> findByAccountIdAndStatusAndState(final String accountId, final AccountStatus status, final AccountState state);
 }

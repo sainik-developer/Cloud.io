@@ -3,7 +3,6 @@ package com.cloudio.rest.controllers;
 import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
-import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
 import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.Map;
 
 @Log4j2
 @Validated
@@ -31,6 +31,7 @@ public class TwilioVoiceController {
     private final AccountRepository accountRepository;
     private final TwilioService twilioService;
     private final AccountService accountService;
+
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -78,7 +79,11 @@ public class TwilioVoiceController {
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Thank you for calling. At this moment no one is available, Please try again at another moment.").build()).hangup(new Hangup.Builder().build()).build().toXml()));
     }
 
-
+    @PostMapping(value = "/timeout", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public Mono<String> hanldTimeout(final Map<String, Object> postBody) {
+        log.info("timeout body is {}", postBody);
+        return Mono.just("");
+    }
 
 
     @PostMapping(value = "/hold", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -105,4 +110,5 @@ public class TwilioVoiceController {
                         .map(newCallSid -> ResponseDTO.builder().data(newCallSid).build()))
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
+
 }

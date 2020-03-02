@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.UUID;
 
 @Log4j2
@@ -52,5 +53,14 @@ public class AccountService {
                 .flatMapMany(tokenRepository::findByAccountIds)
                 .map(TokenDO::getAccountId)
                 .switchIfEmpty(Mono.error(RuntimeException::new));
+    }
+
+    public Flux<String> isTokenRegisteredOnlineAndActiveAccount(final List<String> accountIDs) {
+        return Flux.fromIterable(accountIDs)
+                .flatMap(accountId -> accountRepository.findByAccountIdAndStatusAndState(accountId, AccountStatus.ACTIVE, AccountState.ONLINE))
+                .map(AccountDO::getAccountId)
+                .flatMap(accountId -> tokenRepository.findByAccountId(accountId))
+                .map(TokenDO::getAccountId)
+                .switchIfEmpty(Mono.error(RuntimeException::new));// give proper exception and message
     }
 }
