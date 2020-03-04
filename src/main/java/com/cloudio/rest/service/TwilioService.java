@@ -24,8 +24,6 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.time.Duration;
 
 @Log4j2
@@ -205,10 +203,6 @@ public class TwilioService {
     }
 
     private String prepareTimeOutUrl(final String adapterNumber, final RingType ringType, final int index) {
-        try {
-            return "/twilio/voice/timeout?" + URLEncoder.encode("adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index, "UTF-8");
-        } catch (final UnsupportedEncodingException e) {
-            return "/twilio/voice/timeout?adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index;
-        }
+        return "/twilio/voice/timeout?" + "adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index;
     }
 }
