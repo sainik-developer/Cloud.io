@@ -121,8 +121,7 @@ public class TwilioService {
                 .flatMap(companyDo -> companyDo.getCompanySetting().getRingType() == RingType.ALL_AT_ONCE ? handleCallAtOnce(companyDo) : handleCallOneByOne(companyDo))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder()
                         .say(new Say.Builder("Thanks for calling to Cloud.io but No company is associated with number").build())
-                        .hangup(new Hangup.Builder().build()).build()
-                        .toXml()));
+                        .hangup(new Hangup.Builder().build()).build().toXml()));
     }
 
     private Mono<String> handleCallAtOnce(final CompanyDO companyDO) {
