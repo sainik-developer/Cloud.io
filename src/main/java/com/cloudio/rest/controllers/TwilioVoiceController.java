@@ -67,9 +67,9 @@ public class TwilioVoiceController {
                                       @RequestParam("ring_type") final String ringType,
                                       @RequestParam(value = "next_index", defaultValue = "0") final Integer nextIndex) {
         log.info("timeout request is received and details are adapter number = {}, ringType = {} and nextIndex = {} ", adapterNumber, ringType, nextIndex);
-        return redisOperations.opsForValue().get(adapterNumber)
-                .flatMap(companySetting -> ringType.equals("IN_ORDER") ? twilioService.handleOneByOneTimeout(adapterNumber, nextIndex, companySetting)
-                        : twilioService.handleVoiceMessage(adapterNumber, companySetting))
+        return redisOperations.opsForValue().get("+" + adapterNumber)
+                .flatMap(companySetting -> ringType.equals("IN_ORDER") ? twilioService.handleOneByOneTimeout("+" + adapterNumber, nextIndex, companySetting)
+                        : twilioService.handleVoiceMessage("+" + adapterNumber, companySetting))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder()
                         .say(new Say.Builder("Some internal error occurred, please contact developer to resolve the technical issue").build())
                         .hangup(new Hangup.Builder().build()).build().toXml()));
