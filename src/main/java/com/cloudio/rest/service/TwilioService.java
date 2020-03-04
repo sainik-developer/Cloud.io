@@ -151,6 +151,7 @@ public class TwilioService {
         return Mono.just(companyDO)
                 .flatMap(companyDo -> accountService.getTokenRegisteredOnlineAndActiveAccount(companyDo.getCompanySetting().getRingOrderAccountIds())
                         .collectList()
+                        .doOnNext(strings -> log.info("number of registered user are {}", strings.size()))
                         .doOnNext(strings -> {
                             companyDo.getCompanySetting().setRingOrderAccountIds(strings);
                             redisOperations.opsForValue().set(companyDO.getAdapterNumber(), companyDo.getCompanySetting(), Duration.ofSeconds(companyDo.getCompanySetting().getOrderDelayInSec()
