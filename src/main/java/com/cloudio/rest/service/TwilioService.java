@@ -129,6 +129,7 @@ public class TwilioService {
                 .flatMap(companyDo -> accountService.getTokenRegisteredAccount(companyDo.getCompanyId())
                         .map(accountId -> new Client.Builder().identity(this.createTwilioCompatibleClientId(accountId)).build())
                         .collectList()
+                        .filter(clients -> clients.size() > 0)
                         .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
                             final Dial.Builder builder = new Dial.Builder();
