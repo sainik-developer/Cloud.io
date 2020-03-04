@@ -206,7 +206,7 @@ public class TwilioService {
 
     private String prepareTimeOutUrl(final String adapterNumber, final RingType ringType, final int index) {
         try {
-            return URLEncoder.encode("/twilio/voice/timeout?adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index, "UTF-8");
+            return "/twilio/voice/timeout?" + URLEncoder.encode("adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index, "UTF-8");
         } catch (final UnsupportedEncodingException e) {
             return "/twilio/voice/timeout?adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index;
         }
