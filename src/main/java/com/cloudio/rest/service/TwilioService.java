@@ -157,7 +157,7 @@ public class TwilioService {
                             redisOperations.opsForValue().set(companyDO.getAdapterNumber(), companyDo.getCompanySetting(), Duration.ofSeconds(companyDo.getCompanySetting().getOrderDelayInSec()
                                     * companyDo.getCompanySetting().getRingOrderAccountIds().size() + 50)).subscribe();
                         })
-                        .map(accountIds -> Pair.of(accountIds.get(0), accountIds.size() > 1 ? 1 : -1)))
+                        .map(accountIds -> Pair.of(accountIds.get(0), 1)))
                 .map(firstAndSecondAccountIds -> Pair.of(new Client.Builder()
                         .identity(this.createTwilioCompatibleClientId(firstAndSecondAccountIds.getLeft())).build(), firstAndSecondAccountIds.getRight()))
                 .map(clientNextAccountIdPair -> new Dial.Builder().client(clientNextAccountIdPair.getLeft()).method(HttpMethod.GET).timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
@@ -170,6 +170,7 @@ public class TwilioService {
     }
 
     public Mono<String> handleOneByOneTimeout(final String adapterNumber, final int nextIndex, final CompanySetting companySetting) {
+        log.info("handle one by one is called with setting adapter number {}, nextIndex {} and companySetting {}", adapterNumber, nextIndex, companySetting);
         return Mono.just(companySetting)
                 .filter(companySettings -> companySettings.getRingOrderAccountIds().size() > nextIndex)
                 .map(companySettings -> companySettings.getRingOrderAccountIds().get(nextIndex))
