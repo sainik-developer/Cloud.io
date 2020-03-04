@@ -170,7 +170,7 @@ public class TwilioService {
     }
 
     public Mono<String> handleOneByOneTimeout(final String adapterNumber, final int nextIndex, final CompanySetting companySetting) {
-        log.info("handle one by one is called with setting adapter number {}, nextIndex {} and companySetting {}", adapterNumber, nextIndex, companySetting);
+        log.info("handle one by one timeout is called with setting adapter number {}, nextIndex {} and companySetting {}", adapterNumber, nextIndex, companySetting);
         return Mono.just(companySetting)
                 .filter(companySettings -> companySettings.getRingOrderAccountIds().size() > nextIndex)
                 .map(companySettings -> companySettings.getRingOrderAccountIds().get(nextIndex))
