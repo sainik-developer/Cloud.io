@@ -62,7 +62,7 @@ public class TwilioVoiceController {
         return twilioService.handleWithSetting(adapterNumber);
     }
 
-    @GetMapping(value = "/timeout")
+    @GetMapping(value = "/timeout", produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleTimeout(@RequestParam("adapterNumber") final String adapterNumber,
                                       @RequestParam("ring_type") final String ringType,
                                       @RequestParam(value = "next_index", defaultValue = "0") final Integer nextIndex) {
