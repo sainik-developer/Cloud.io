@@ -14,7 +14,7 @@ import java.util.List;
 public class CompanySetting {
     private RingType ringType;
     private List<String> ringOrderAccountIds;
-    private Integer orderDelayInMin;
+    private Integer orderDelayInSec;
     private Boolean isVoiceMessage;
     private VoiceMessageSetting voiceMessageSetting;
 }

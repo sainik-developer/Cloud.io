@@ -2,12 +2,10 @@ package com.cloudio.rest.controllers;
 
 import com.cloudio.rest.dto.*;
 import com.cloudio.rest.entity.AccountDO;
-import com.cloudio.rest.exception.AccountNotExistException;
-import com.cloudio.rest.exception.CompanyNameNotUniqueException;
-import com.cloudio.rest.exception.InvalidTempTokenException;
-import com.cloudio.rest.exception.NotAuthorizedToUpdateCompanyProfileException;
+import com.cloudio.rest.exception.*;
 import com.cloudio.rest.mapper.AccountMapper;
 import com.cloudio.rest.mapper.CompanyMapper;
+import com.cloudio.rest.mapper.CompanySettingMapper;
 import com.cloudio.rest.mapper.GroupMapper;
 import com.cloudio.rest.pojo.AccountState;
 import com.cloudio.rest.pojo.AccountStatus;
@@ -35,13 +33,13 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class CompanyController {
     private final AuthService authService;
-    private final CompanyRepository companyRepository;
+    private final GroupService groupService;
+    private final AWSS3Services awss3Services;
     private final AccountService accountService;
     private final CompanyService companyService;
-    private final AccountRepository accountRepository;
-    private final AWSS3Services awss3Services;
-    private final GroupService groupService;
     private final GroupRepository groupRepository;
+    private final CompanyRepository companyRepository;
+    private final AccountRepository accountRepository;
 
     @GetMapping("/details")
     public Mono<CompanyDTO> getCompanyByAccountId(@RequestHeader("accountId") final String accountId) {
@@ -194,13 +192,24 @@ public class CompanyController {
     public Flux<AccountDTO> getAllMembersByCompany(@RequestHeader("accountId") final String accountId, @RequestParam(value = "state", defaultValue = "", required = false) final String state) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(AccountDO::getCompanyId)
-                .flatMapMany(companyId -> !state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) : accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
+                .flatMapMany(companyId -> !state.isEmpty() ? accountRepository.findByCompanyIdAndStatusAndState(companyId, AccountStatus.ACTIVE, AccountState.valueOf(state)) :
+                        accountRepository.findByCompanyIdAndStatus(companyId, AccountStatus.ACTIVE))
                 .map(AccountMapper.INSTANCE::toDTO)
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
 
-    @PostMapping("/setting")
-    public Mono<CompanyDTO> saveTheSetting(@RequestHeader("accountId") final String accountId, @RequestBody CompanySettingDTO companySettingDTO) {
-
+    @PostMapping(value = "/setting", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<CompanyDTO> saveTheSetting(@RequestHeader("accountId") final String accountId, @Validated @RequestBody CompanySettingDTO companySettingDTO) {
+        return accountRepository.findByAccountIdAndStatusAndType(accountId, AccountStatus.ACTIVE, AccountType.ADMIN)
+                .map(AccountDO::getCompanyId)
+                .flatMap(companyId -> companyService.checkIfAccountPartOfCompany(companyId, companySettingDTO)
+                        .flatMap(companySettingDto -> companyRepository.findByCompanyId(companyId))
+                        .map(companyDo -> {
+                            companyDo.setCompanySetting(CompanySettingMapper.INSTANCE.fromDTO(companySettingDTO));
+                            return companyDo;
+                        })
+                        .flatMap(companyRepository::save)
+                        .map(CompanyMapper.INSTANCE::toDTO))
+                .switchIfEmpty(Mono.error(UnAuthorizedToUpdateSettingException::new));
     }
 }

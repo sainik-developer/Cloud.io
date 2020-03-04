@@ -39,12 +39,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/account")
 @RequiredArgsConstructor
 public class AccountController {
-    private final AccountRepository accountRepository;
-    private final TokenRepository tokenRepository;
-    private final AccountService accountService;
     private final AWSS3Services awss3Services;
-    private final FirebaseService firebaseService;
     private final TwilioService twilioService;
+    private final AccountService accountService;
+    private final TokenRepository tokenRepository;
+    private final FirebaseService firebaseService;
+    private final AccountRepository accountRepository;
 
     @GetMapping("")
     Mono<AccountDTO> getAccountDetails(@RequestHeader("accountId") final String accountId) {
@@ -150,7 +150,7 @@ public class AccountController {
                 .switchIfEmpty(Mono.error(new AccountNotExistException()));
     }
 
-    @GetMapping("/refreshFirebaseToken")
+    @GetMapping(value = "/refreshFirebaseToken", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Mono<FirebaseRefreshTokenDTO> refreshFirebaseTokne(@RequestHeader("accountId") final String accountId) {
         return accountRepository.findByAccountIdAndStatus(accountId, AccountStatus.ACTIVE)
                 .map(accountDo -> firebaseService.refreshFireBaseCustomToken(accountDo.getAccountId()))

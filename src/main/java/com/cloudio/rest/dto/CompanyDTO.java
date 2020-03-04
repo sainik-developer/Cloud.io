@@ -1,6 +1,5 @@
 package com.cloudio.rest.dto;
 
-import com.cloudio.rest.pojo.CompanySetting;
 import com.cloudio.rest.pojo.CompanyStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
@@ -29,5 +29,6 @@ public class CompanyDTO {
     private String adapterNumber;
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<GroupDTO> groups;
-    private CompanySetting companySetting;
+    @Valid
+    private CompanySettingDTO companySetting;
 }

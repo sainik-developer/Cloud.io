@@ -4,22 +4,21 @@ import com.cloudio.rest.dto.ResponseDTO;
 import com.cloudio.rest.dto.TwilioCallRequestDTO;
 import com.cloudio.rest.exception.AccountNotExistException;
 import com.cloudio.rest.pojo.AccountStatus;
+import com.cloudio.rest.pojo.CompanySetting;
 import com.cloudio.rest.repository.AccountRepository;
-import com.cloudio.rest.repository.CompanyRepository;
-import com.cloudio.rest.service.AccountService;
 import com.cloudio.rest.service.TwilioService;
 import com.twilio.twiml.VoiceResponse;
 import com.twilio.twiml.voice.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotEmpty;
-import java.util.Map;
 
 @Log4j2
 @Validated
@@ -27,11 +26,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 @RequestMapping("/twilio/voice")
 public class TwilioVoiceController {
-    private final CompanyRepository companyRepository;
-    private final AccountRepository accountRepository;
     private final TwilioService twilioService;
-    private final AccountService accountService;
-
+    private final AccountRepository accountRepository;
+    private final ReactiveRedisOperations<String, CompanySetting> redisOperations;
 
     @PostMapping(value = "/init", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.APPLICATION_XML_VALUE)
     public Mono<String> handleInit(final TwilioCallRequestDTO twilioCallRequestDTO) {
@@ -62,29 +59,21 @@ public class TwilioVoiceController {
     public Mono<String> handleDTMFEntry(final TwilioCallRequestDTO twilioCallRequestDTO) {
         final String adapterNumber = twilioCallRequestDTO.getTo().trim() + "," + twilioCallRequestDTO.getDigits() + "*";
         log.info("/dtmf is called {} where adapter number is {}", twilioCallRequestDTO, adapterNumber);
-        return companyRepository.findByAdapterNumber(adapterNumber)
-                .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
-                .flatMap(companyDo -> accountService.getTokenRegisteredAccount(companyDo.getCompanyId())
-                        .map(accountId -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountId)).build())
-                        .collectList()
-                        .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
-                        .map(clients -> {
-                            final Dial.Builder builder = new Dial.Builder();
-                            clients.forEach(builder::client);
-                            return builder.build();
-                        })
-                        .map(dial -> new VoiceResponse.Builder().dial(dial).build())
-                        .map(VoiceResponse::toXml)
-                        .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
-                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Thank you for calling. At this moment no one is available, Please try again at another moment.").build()).hangup(new Hangup.Builder().build()).build().toXml()));
+        return twilioService.handleWithSetting(adapterNumber);
     }
 
     @PostMapping(value = "/timeout", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public Mono<String> hanldTimeout(final Map<String, Object> postBody) {
-        log.info("timeout body is {}", postBody);
-        return Mono.just("");
+    public Mono<String> handleTimeout(@RequestParam("adapterNumber") final String adapterNumber,
+                                      @RequestParam("ring_type") final String ringType,
+                                      @RequestParam(value = "next_index", defaultValue = "0") final Integer nextIndex,
+                                      final TwilioCallRequestDTO twilioCallRequestDTO) {
+        return redisOperations.opsForValue().get(adapterNumber)
+                .flatMap(companySetting -> ringType.equals("IN_ORDER") ? twilioService.handleOneByOneTimeout(adapterNumber, nextIndex, companySetting)
+                        : twilioService.handleVoiceMessage(adapterNumber, companySetting))
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder()
+                        .say(new Say.Builder("Some internal error occurred, please contact developer to resolve the technical issue").build())
+                        .hangup(new Hangup.Builder().build()).build().toXml()));
     }
-
 
     @PostMapping(value = "/hold", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseDTO> handleHold(@RequestHeader("accountId") final String fromAccountId,
@@ -110,5 +99,4 @@ public class TwilioVoiceController {
                         .map(newCallSid -> ResponseDTO.builder().data(newCallSid).build()))
                 .switchIfEmpty(Mono.error(AccountNotExistException::new));
     }
-
 }

@@ -52,15 +52,15 @@ public class AccountService {
                 .collectList()
                 .flatMapMany(tokenRepository::findByAccountIds)
                 .map(TokenDO::getAccountId)
-                .switchIfEmpty(Mono.error(RuntimeException::new));
+                .switchIfEmpty(Flux.empty());
     }
 
-    public Flux<String> isTokenRegisteredOnlineAndActiveAccount(final List<String> accountIDs) {
+    public Flux<String> getTokenRegisteredOnlineAndActiveAccount(final List<String> accountIDs) {
         return Flux.fromIterable(accountIDs)
                 .flatMap(accountId -> accountRepository.findByAccountIdAndStatusAndState(accountId, AccountStatus.ACTIVE, AccountState.ONLINE))
                 .map(AccountDO::getAccountId)
-                .flatMap(accountId -> tokenRepository.findByAccountId(accountId))
+                .flatMap(tokenRepository::findByAccountId)
                 .map(TokenDO::getAccountId)
-                .switchIfEmpty(Mono.error(RuntimeException::new));// give proper exception and message
+                .switchIfEmpty(Flux.empty());// give proper exception and message
     }
 }

@@ -6,7 +6,6 @@ import com.cloudio.rest.exception.CallTransferFailedException;
 import com.cloudio.rest.exception.HoldingNotAllowedException;
 import com.cloudio.rest.pojo.CompanySetting;
 import com.cloudio.rest.pojo.RingType;
-import com.cloudio.rest.repository.AccountRepository;
 import com.cloudio.rest.repository.CompanyRepository;
 import com.twilio.Twilio;
 import com.twilio.http.HttpMethod;
@@ -25,14 +24,15 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.PostConstruct;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.time.Duration;
 
 @Log4j2
 @Service
 @RequiredArgsConstructor
 public class TwilioService {
-    private final TwilioService twilioService;
     private final AccountService accountService;
-    private final AccountRepository accountRepository;
     private final CompanyRepository companyRepository;
     private final ReactiveRedisOperations<String, CompanySetting> redisOperations;
 
@@ -111,6 +111,13 @@ public class TwilioService {
 
     public Mono<String> handleWithSetting(final String adapterNumber) {
         return companyRepository.findByAdapterNumber(adapterNumber)
+                .doOnNext(companyDo -> log.info("adapter number is found and related company {}", companyDo))
+                .map(companyDo -> {
+                    if (companyDo.getCompanySetting() == null) {
+                        companyDo.setCompanySetting(CompanySetting.builder().ringType(RingType.ALL_AT_ONCE).isVoiceMessage(false).build());
+                    }
+                    return companyDo;
+                })
                 .flatMap(companyDo -> companyDo.getCompanySetting().getRingType() == RingType.ALL_AT_ONCE ? handleCallAtOnce(companyDo) : handleCallOneByOne(companyDo))
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder()
                         .say(new Say.Builder("Thanks for calling to Cloud.io but No company is associated with number").build())
@@ -121,15 +128,21 @@ public class TwilioService {
     private Mono<String> handleCallAtOnce(final CompanyDO companyDO) {
         return Mono.just(companyDO)
                 .flatMap(companyDo -> accountService.getTokenRegisteredAccount(companyDo.getCompanyId())
-                        .map(accountId -> new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(accountId)).build())
+                        .map(accountId -> new Client.Builder().identity(this.createTwilioCompatibleClientId(accountId)).build())
                         .collectList()
                         .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
                             final Dial.Builder builder = new Dial.Builder();
-                            builder.method(HttpMethod.GET).timeout(companyDO.getCompanySetting().getVoiceMessageSetting().getPlayafterInSec()).action("/twilio/voice/timeout?adpaterNumber=" + companyDO.getAdapterNumber() + "ring_type=" + RingType.ALL_AT_ONCE);
+                            builder.method(HttpMethod.POST)
+                                    .timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
+                                    .action(prepareTimeOutUrl(companyDO.getAdapterNumber(), RingType.ALL_AT_ONCE, 0));
                             clients.forEach(builder::client);
                             return builder.build();
                         })
+                        .doOnNext(dial -> redisOperations.opsForValue()
+                                .set(companyDO.getAdapterNumber(), companyDO.getCompanySetting(), Duration.ofSeconds(100))
+                                .doOnNext(aBoolean -> log.info("data saved in redis status is {}", aBoolean))
+                                .subscribe())
                         .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                         .map(VoiceResponse::toXml)
                         .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
@@ -138,29 +151,64 @@ public class TwilioService {
 
     private Mono<String> handleCallOneByOne(final CompanyDO companyDO) {
         return Mono.just(companyDO)
-                .flatMap(companyDo -> accountService.isTokenRegisteredOnlineAndActiveAccount(companyDo.getCompanySetting().getRingOrderAccountIds())
-                        .collectList().map(accountIds -> Pair.of(accountIds.get(0), accountIds.get(1))))
-                .map(firstAndSecondAccountIds -> Pair.of(new Client.Builder().identity(twilioService.createTwilioCompatibleClientId(firstAndSecondAccountIds.getLeft())).build(), firstAndSecondAccountIds.getRight()))
-                .map(clientNextAccountIdPair -> {
-                    final Dial.Builder builder = new Dial.Builder();
-                    builder.client(clientNextAccountIdPair.getLeft());
-                    builder.method(HttpMethod.GET).timeout(companyDO.getCompanySetting().getVoiceMessageSetting().getPlayafterInSec()).action("/twilio/voice/timeout?adpaterNumber=" + companyDO.getAdapterNumber() + "ring_type=" + RingType.IN_ORDER);
-                    return builder.build();
-                })
+                .flatMap(companyDo -> accountService.getTokenRegisteredOnlineAndActiveAccount(companyDo.getCompanySetting().getRingOrderAccountIds())
+                        .collectList()
+                        .doOnNext(strings -> {
+                            companyDo.getCompanySetting().setRingOrderAccountIds(strings);
+                            redisOperations.opsForValue().set(companyDO.getAdapterNumber(), companyDo.getCompanySetting(), Duration.ofSeconds(companyDo.getCompanySetting().getOrderDelayInSec()
+                                    * companyDo.getCompanySetting().getRingOrderAccountIds().size() + 50)).subscribe();
+                        })
+                        .map(accountIds -> Pair.of(accountIds.get(0), accountIds.size() > 1 ? 1 : -1)))
+                .map(firstAndSecondAccountIds -> Pair.of(new Client.Builder()
+                        .identity(this.createTwilioCompatibleClientId(firstAndSecondAccountIds.getLeft())).build(), firstAndSecondAccountIds.getRight()))
+                .map(clientNextAccountIdPair -> new Dial.Builder().client(clientNextAccountIdPair.getLeft()).method(HttpMethod.POST).timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
+                        .action(prepareTimeOutUrl(companyDO.getAdapterNumber(), RingType.IN_ORDER, clientNextAccountIdPair.getRight())).build())
                 .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                 .map(VoiceResponse::toXml)
-                .doOnNext(xml -> log.info("dial Twilio xml is {}", xml)))
+                .doOnNext(xml -> log.info("dial Twilio xml is {}", xml))
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().say(new Say.Builder("Thank you for calling. At this moment no one is available, Please try again at another moment.").build())
+                        .hangup(new Hangup.Builder().build()).build().toXml()));
     }
-//
-//    private Mono<String> findFirstAccountActiveAndOnline(final List<String> accountIDs) {
-//        return Flux.fromIterable(accountIDs)
-//                .flatMap(accountId -> accountRepository.findByAccountIdAndStatusAndState(accountId, AccountStatus.ACTIVE, AccountState.ONLINE))// TODO test it
-//                .map(AccountDO::getAccountId)
-//                .collectList()
-//                .map(accountIds -> accountIds.get(0));
-//    }
 
-    private String prepareTimeOutUrl() {
+    public Mono<String> handleOneByOneTimeout(final String adapterNumber, final int nextIndex, final CompanySetting companySetting) {
+        return Mono.just(companySetting)
+                .filter(companySettings -> companySettings.getRingOrderAccountIds().size() > nextIndex)
+                .map(companySettings -> companySettings.getRingOrderAccountIds().get(nextIndex))
+                .map(nextAccountId -> new Dial.Builder().client(new Client.Builder().identity(this.createTwilioCompatibleClientId(nextAccountId)).build())
+                        .method(HttpMethod.POST)
+                        .timeout(calculateTimeout(companySetting, nextIndex + 1))
+                        .action(prepareTimeOutUrl(adapterNumber, RingType.IN_ORDER, nextIndex + 1)).build())
+                .map(dial -> new VoiceResponse.Builder().dial(dial).build())
+                .map(VoiceResponse::toXml)
+                .switchIfEmpty(handleVoiceMessage(adapterNumber, companySetting));
+    }
 
+    public Mono<String> handleVoiceMessage(final String adapterNumber, final CompanySetting companySetting) {
+        return Mono.just(companySetting)
+                .filter(CompanySetting::getIsVoiceMessage)
+                .map(companySettings -> new VoiceResponse.Builder().say(new Say.Builder(companySetting.getVoiceMessageSetting().getContent())
+                        .voice(companySetting.getVoiceMessageSetting().getVoiceType().equals("MAN") ? Say.Voice.MAN : Say.Voice.WOMAN)
+                        .language(companySetting.getVoiceMessageSetting().getLang().equals("ENGLISH") ? Say.Language.EN_US : Say.Language.NL_NL).build()).build())
+                .map(VoiceResponse::toXml)
+                .doOnNext(s -> redisOperations.opsForValue().delete(adapterNumber).subscribe())
+                .switchIfEmpty(Mono.just(new VoiceResponse.Builder().hangup(new Hangup.Builder().build()).build().toXml()));
+    }
+
+    private int calculateTimeout(final CompanySetting companySetting, int index) {
+        if (companySetting != null && companySetting.getRingType() == RingType.ALL_AT_ONCE && companySetting.getIsVoiceMessage()) {
+            return companySetting.getVoiceMessageSetting().getPlayAfterInSec();
+        } else if (companySetting != null && companySetting.getRingType() == RingType.IN_ORDER && companySetting.getIsVoiceMessage()) {
+            return companySetting.getVoiceMessageSetting().getAfterLastColleagueInList() ? companySetting.getOrderDelayInSec() :
+                    Math.min(companySetting.getVoiceMessageSetting().getPlayAfterInSec() - companySetting.getOrderDelayInSec() * index, companySetting.getOrderDelayInSec());
+        }
+        return 30;
+    }
+
+    private String prepareTimeOutUrl(final String adapterNumber, final RingType ringType, final int index) {
+        try {
+            return URLEncoder.encode("/twilio/voice/timeout?adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index, "UTF-8");
+        } catch (final UnsupportedEncodingException e) {
+            return "/twilio/voice/timeout?adapterNumber=" + adapterNumber + "&ring_type=" + ringType + "&next_index=" + index;
+        }
     }
 }

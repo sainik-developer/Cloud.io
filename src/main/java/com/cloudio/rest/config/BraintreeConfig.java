@@ -8,16 +8,12 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class BraintreeConfig {
-
     @Value("${payment.bt.environment}")
     private String ENVIRONMENT;
-
     @Value("${payment.bt.merchantId}")
     private String MERCHANT_ID;
-
     @Value("${payment.bt.publicKey}")
     private String PUBLIC_KEY;
-
     @Value("${payment.bt.privateKey}")
     private String PRIVATE_KEY;
 

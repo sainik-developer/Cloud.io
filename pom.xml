@@ -27,6 +27,8 @@
         <twilio.version>7.42.0</twilio.version>
         <pushy.version>0.13.10</pushy.version>
         <pushy.netty.version>2.0.25.Final</pushy.netty.version>
+        <braintree.version>2.106.0</braintree.version>
+        <swagger.annotation.version>2.1.1</swagger.annotation.version>
         <!--java 8 support for maven-->
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -77,7 +79,7 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>2.1.1</version>
+            <version>${swagger.annotation.version}</version>
         </dependency>
         <!--Unit test framework-->
         <dependency>
@@ -99,7 +101,7 @@
         <dependency>
             <groupId>com.braintreepayments.gateway</groupId>
             <artifactId>braintree-java</artifactId>
-            <version>2.106.0</version>
+            <version>${braintree.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

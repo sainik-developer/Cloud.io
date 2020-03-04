@@ -23,6 +23,12 @@ public class GroupErrorAdvice {
         return new ResponseDTO(null, "User is not admin or no more active to update the company profile", null);
     }
 
+    @ExceptionHandler(value = UnAuthorizedToUpdateSettingException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseDTO unAuthorizedToUpdateSettingException(final Exception e) {
+        return new ResponseDTO(null, "User is not admin or no more active to update the company setting", null);
+    }
+
     @ExceptionHandler(value = SignInException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseDTO signInException(final Exception e) {
@@ -129,5 +135,11 @@ public class GroupErrorAdvice {
     @ResponseStatus(HttpStatus.NOT_ACCEPTABLE)
     public ResponseDTO callTransferFailedException(final Exception e) {
         return new ResponseDTO(1032, "Call transfer failed", null);
+    }
+
+    @ExceptionHandler(value = RingInOrderIsEmptyException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseDTO ringInOrderIsEmptyException(final Exception e) {
+        return new ResponseDTO(null, "Ring in order must not be empty", null);
     }
 }
