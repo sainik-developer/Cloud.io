@@ -160,7 +160,10 @@ public class TwilioService {
                         .map(accountIds -> Pair.of(accountIds.get(0), 1)))
                 .map(firstAndSecondAccountIds -> Pair.of(new Client.Builder()
                         .identity(this.createTwilioCompatibleClientId(firstAndSecondAccountIds.getLeft())).build(), firstAndSecondAccountIds.getRight()))
-                .map(clientNextAccountIdPair -> new Dial.Builder().client(clientNextAccountIdPair.getLeft()).method(HttpMethod.GET).timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
+                .map(clientNextAccountIdPair -> new Dial.Builder()
+                        .client(clientNextAccountIdPair.getLeft())
+                        .method(HttpMethod.GET)
+                        .timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
                         .action(prepareTimeOutUrl(companyDO.getAdapterNumber(), RingType.IN_ORDER, clientNextAccountIdPair.getRight())).build())
                 .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                 .map(VoiceResponse::toXml)
@@ -174,7 +177,8 @@ public class TwilioService {
         return Mono.just(companySetting)
                 .filter(companySettings -> companySettings.getRingOrderAccountIds().size() > nextIndex)
                 .map(companySettings -> companySettings.getRingOrderAccountIds().get(nextIndex))
-                .map(nextAccountId -> new Dial.Builder().client(new Client.Builder().identity(this.createTwilioCompatibleClientId(nextAccountId)).build())
+                .map(nextAccountId -> new Dial.Builder()
+                        .client(new Client.Builder().identity(this.createTwilioCompatibleClientId(nextAccountId)).build())
                         .method(HttpMethod.GET)
                         .timeout(calculateTimeout(companySetting, nextIndex + 1))
                         .action(prepareTimeOutUrl(adapterNumber, RingType.IN_ORDER, nextIndex + 1)).build())
@@ -198,7 +202,7 @@ public class TwilioService {
     private int calculateTimeout(final CompanySetting companySetting, int index) {
         if (companySetting != null && companySetting.getRingType() == RingType.ALL_AT_ONCE && companySetting.getIsVoiceMessage()) {
             return companySetting.getVoiceMessageSetting().getPlayAfterInSec();
-        } else if (companySetting != null && companySetting.getRingType() == RingType.IN_ORDER && companySetting.getIsVoiceMessage()) {
+        } else if (companySetting != null && companySetting.getRingType() == RingType.IN_ORDER) {
             return companySetting.getVoiceMessageSetting().getAfterLastColleagueInList() ? companySetting.getOrderDelayInSec() :
                     Math.min(companySetting.getVoiceMessageSetting().getPlayAfterInSec() - companySetting.getOrderDelayInSec() * index, companySetting.getOrderDelayInSec());
         }
