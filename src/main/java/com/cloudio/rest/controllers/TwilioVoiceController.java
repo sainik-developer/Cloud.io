@@ -62,11 +62,10 @@ public class TwilioVoiceController {
         return twilioService.handleWithSetting(adapterNumber);
     }
 
-    @PostMapping(value = "/timeout", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    @GetMapping(value = "/timeout")
     public Mono<String> handleTimeout(@RequestParam("adapterNumber") final String adapterNumber,
                                       @RequestParam("ring_type") final String ringType,
-                                      @RequestParam(value = "next_index", defaultValue = "0") final Integer nextIndex,
-                                      final TwilioCallRequestDTO twilioCallRequestDTO) {
+                                      @RequestParam(value = "next_index", defaultValue = "0") final Integer nextIndex) {
         log.info("timeout request is received and details are adapter number = {}, ringType = {} and nextIndex = {} ", adapterNumber, ringType, nextIndex);
         return redisOperations.opsForValue().get(adapterNumber)
                 .flatMap(companySetting -> ringType.equals("IN_ORDER") ? twilioService.handleOneByOneTimeout(adapterNumber, nextIndex, companySetting)
