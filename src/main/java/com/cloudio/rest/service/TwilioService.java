@@ -195,6 +195,7 @@ public class TwilioService {
                         .voice(companySetting.getVoiceMessageSetting().getVoiceType().equals("MAN") ? Say.Voice.MAN : Say.Voice.WOMAN)
                         .language(companySetting.getVoiceMessageSetting().getLang().equals("ENGLISH") ? Say.Language.EN_US : Say.Language.NL_NL).build()).build())
                 .map(VoiceResponse::toXml)
+                .doOnNext(xml -> log.info("the response is {}", xml))
                 .doOnNext(s -> redisOperations.opsForValue().delete(adapterNumber).subscribe())
                 .switchIfEmpty(Mono.just(new VoiceResponse.Builder().hangup(new Hangup.Builder().build()).build().toXml()));
     }
