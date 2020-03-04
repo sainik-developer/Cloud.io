@@ -180,6 +180,7 @@ public class TwilioService {
                         .action(prepareTimeOutUrl(adapterNumber, RingType.IN_ORDER, nextIndex + 1)).build())
                 .map(dial -> new VoiceResponse.Builder().dial(dial).build())
                 .map(VoiceResponse::toXml)
+                .doOnNext(twilioXmlResponse -> log.info("handleOneByOneTimeout response is {}", twilioXmlResponse))
                 .switchIfEmpty(handleVoiceMessage(adapterNumber, companySetting));
     }
 
