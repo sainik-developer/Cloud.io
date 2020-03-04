@@ -133,7 +133,7 @@ public class TwilioService {
                         .doOnNext(clients -> log.info("total number of clients are {}", clients.size()))
                         .map(clients -> {
                             final Dial.Builder builder = new Dial.Builder();
-                            builder.method(HttpMethod.POST)
+                            builder.method(HttpMethod.GET)
                                     .timeout(calculateTimeout(companyDO.getCompanySetting(), 0))
                                     .action(prepareTimeOutUrl(companyDO.getAdapterNumber(), RingType.ALL_AT_ONCE, 0));
                             clients.forEach(builder::client);
