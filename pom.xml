@@ -22,7 +22,7 @@
         <aws.s3.sdk.version>1.11.641</aws.s3.sdk.version>
         <lib.phone.number.version>3.5</lib.phone.number.version>
         <lombok.version>1.18.10</lombok.version>
-        <apache.common.version>3.9</apache.common.version>
+        <apache.common.version>3.18.0</apache.common.version>
         <maven.compiler.plugin.version>3.6.1</maven.compiler.plugin.version>
         <twilio.version>7.42.0</twilio.version>
         <pushy.version>0.13.10</pushy.version>
